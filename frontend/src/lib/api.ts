@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+import { getToken } from "./auth";
+
+export const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export interface FilterOptions {
   states: string[];
@@ -99,9 +101,12 @@ export class ApiError extends Error {
 }
 
 async function getJSON<T>(path: string): Promise<T> {
+  const token = getToken();
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`);
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
   } catch {
     throw new ApiError("network", `Não foi possível conectar à API em ${API_BASE}.`);
   }
@@ -119,6 +124,7 @@ async function getJSON<T>(path: string): Promise<T> {
 }
 
 export const api = {
+  me: () => getJSON<{ username: string }>("/api/auth/me"),
   filterOptions: () => getJSON<FilterOptions>("/api/filters"),
   kpis: (f: Filters) => getJSON<Kpis>(`/api/kpis${buildQuery(f)}`),
   revenue: (f: Filters) => getJSON<RevenuePoint[]>(`/api/revenue${buildQuery(f)}`),

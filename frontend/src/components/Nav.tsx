@@ -1,6 +1,10 @@
 import { motion } from "framer-motion";
 
-export function Nav() {
+interface Props {
+  onLogout?: () => void;
+}
+
+export function Nav({ onLogout }: Props) {
   return (
     <motion.header
       initial={{ y: -24, opacity: 0 }}
@@ -16,9 +20,19 @@ export function Nav() {
           <span className="text-[15px] font-semibold tracking-tight">Olist Analytics</span>
           <span className="text-[13px] text-text-muted">receita · entregas · avaliações</span>
         </div>
-        <div className="ml-auto flex items-center gap-2 font-mono text-[11px] text-text-muted">
-          <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
-          dados reais · live query
+        <div className="ml-auto flex items-center gap-4">
+          <div className="flex items-center gap-2 font-mono text-[11px] text-text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+            dados reais · live query
+          </div>
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="rounded-full border border-border px-3 py-1 text-[12px] text-text-muted transition-colors hover:border-border-strong hover:text-text-dim"
+            >
+              Sair
+            </button>
+          )}
         </div>
       </div>
     </motion.header>
