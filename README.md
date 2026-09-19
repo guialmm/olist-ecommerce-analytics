@@ -1,8 +1,9 @@
 # SaaS Analytics
 
 Projeto de portfólio/estudo: banco de dados relacional próprio (MySQL) simulando
-uma empresa SaaS fictícia com assinaturas, uso de produto e churn, mais um
-dashboard interativo em Streamlit para responder perguntas de negócio.
+uma empresa SaaS fictícia com assinaturas, uso de produto e churn, mais uma
+API (FastAPI) e um dashboard interativo animado (React + TypeScript + Tailwind
++ Framer Motion) para responder perguntas de negócio.
 
 ## Contexto
 
@@ -30,7 +31,9 @@ verdade para encontrar, como em um SaaS real.
 - **MySQL 8** (Docker)
 - **Python** (Faker, pandas, numpy) para geração de dados sintéticos
 - **SQLAlchemy / PyMySQL** para ETL
-- **Streamlit + Plotly** para o dashboard
+- **FastAPI** — API REST que serve o dashboard
+- **React + TypeScript + Tailwind + Framer Motion + Recharts** — frontend animado
+- **Streamlit** — dashboard MVP anterior, mantido em `dashboard/` como referência
 
 ## Setup
 
@@ -42,7 +45,7 @@ docker compose up -d
 # 2. Ambiente Python
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r backend/requirements.txt
 
 # 3. Gerar dados sintéticos (grava CSVs em data/)
 python data_generation/generate_data.py
@@ -54,7 +57,21 @@ python etl/load_to_mysql.py
 mysql -h 127.0.0.1 -u saas_user -p saas_analytics < sql/views.sql
 # (senha em .env, MYSQL_PASSWORD)
 
-# 6. Rodar o dashboard
+# 6. Subir a API
+cd backend && uvicorn main:app --port 8000
+# em outro terminal:
+
+# 7. Subir o frontend
+cd frontend
+cp .env.example .env
+npm install
+npm run dev
+# abre em http://localhost:5173 (API em http://localhost:8000)
+```
+
+Alternativa rápida (dashboard MVP em Streamlit, sem precisar do frontend):
+
+```bash
 streamlit run dashboard/app.py
 ```
 
