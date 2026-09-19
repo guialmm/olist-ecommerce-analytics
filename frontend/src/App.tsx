@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Background } from "./components/Background";
 import { DateRangePicker } from "./components/DateRangePicker";
 import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
+import { EmptyState } from "./components/EmptyState";
 import { FilterBar } from "./components/FilterBar";
 import { FreightChart } from "./components/FreightChart";
 import { KpiCard } from "./components/KpiCard";
@@ -17,6 +18,7 @@ import { TopCategoriesChart } from "./components/TopCategoriesChart";
 import { TopSellersChart } from "./components/TopSellersChart";
 import {
   api,
+  ApiError,
   type CategoryRevenue,
   type DeliveryVsReview,
   type FilterOptions,
@@ -28,6 +30,11 @@ import {
   type StateRevenue,
   type TopSeller,
 } from "./lib/api";
+
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) return err.message;
+  return "Erro inesperado ao carregar os dados.";
+}
 
 export default function App() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
@@ -47,13 +54,17 @@ export default function App() {
   const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [retryTick, setRetryTick] = useState(0);
 
-  useEffect(() => {
+  const loadFilterOptions = useCallback(() => {
+    setError(null);
     api
       .filterOptions()
       .then(setFilterOptions)
-      .catch(() => setError("Não foi possível conectar à API em http://localhost:8000."));
+      .catch((err) => setError(errorMessage(err)));
   }, []);
+
+  useEffect(loadFilterOptions, [loadFilterOptions, retryTick]);
 
   useEffect(() => {
     if (!filterOptions) return;
@@ -82,9 +93,11 @@ export default function App() {
         setError(null);
         setInitialLoading(false);
       })
-      .catch(() => setError("Erro ao carregar os dados."));
+      .catch((err) => setError(errorMessage(err)));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterOptions, states, categories, startDate, endDate]);
+
+  const retry = () => setRetryTick((n) => n + 1);
 
   const toggleState = (s: string) =>
     setStates((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -93,13 +106,25 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="grid min-h-screen place-items-center px-6 text-center">
-        <div>
-          <p className="text-lg font-semibold">{error}</p>
-          <p className="mt-2 text-sm text-text-muted">
-            Rode <code className="font-mono text-accent">uvicorn main:app --port 8000</code> na
-            pasta <code className="font-mono">backend/</code>.
-          </p>
+      <div className="relative min-h-screen">
+        <Background />
+        <div className="relative z-10 grid min-h-screen place-items-center px-6 text-center">
+          <div className="card max-w-md p-8">
+            <p className="text-lg font-semibold">Não foi possível carregar o dashboard</p>
+            <p className="mt-2 text-sm text-text-dim">{error}</p>
+            <p className="mt-4 text-[12px] text-text-muted">
+              Verifique se a API está rodando (
+              <code className="font-mono text-accent">uvicorn main:app --port 8000</code> na
+              pasta <code className="font-mono">backend/</code>) e se o MySQL está de pé (
+              <code className="font-mono text-accent">docker compose up -d</code>).
+            </p>
+            <button
+              onClick={retry}
+              className="mt-5 rounded-full border border-accent/40 bg-accent-soft px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/20"
+            >
+              Tentar novamente
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -205,11 +230,23 @@ export default function App() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SectionCard title="Receita mensal (GMV)" subtitle="valor dos itens vendidos">
-            {initialLoading ? <ChartSkeleton height={280} /> : <RevenueTimeseriesChart data={revenue} />}
+            {initialLoading ? (
+              <ChartSkeleton height={280} />
+            ) : revenue.length === 0 ? (
+              <EmptyState height={280} />
+            ) : (
+              <RevenueTimeseriesChart data={revenue} />
+            )}
           </SectionCard>
 
           <SectionCard title="Status dos pedidos" subtitle="volume por status" delay={0.05}>
-            {initialLoading ? <ChartSkeleton /> : <OrderStatusChart data={orderStatus} />}
+            {initialLoading ? (
+              <ChartSkeleton />
+            ) : orderStatus.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <OrderStatusChart data={orderStatus} />
+            )}
           </SectionCard>
 
           <SectionCard
@@ -219,6 +256,8 @@ export default function App() {
           >
             {initialLoading || !deliveryVsReview ? (
               <ChartSkeleton />
+            ) : deliveryVsReview.on_time.length === 0 && deliveryVsReview.late.length === 0 ? (
+              <EmptyState />
             ) : (
               <DeliveryReviewChart data={deliveryVsReview} />
             )}
@@ -229,11 +268,23 @@ export default function App() {
             subtitle="valor total vendido"
             delay={0.15}
           >
-            {initialLoading ? <ChartSkeleton height={300} /> : <TopCategoriesChart data={topCategories} />}
+            {initialLoading ? (
+              <ChartSkeleton height={300} />
+            ) : topCategories.length === 0 ? (
+              <EmptyState height={300} />
+            ) : (
+              <TopCategoriesChart data={topCategories} />
+            )}
           </SectionCard>
 
           <SectionCard title="Receita por estado" subtitle="top estados do cliente" delay={0.2}>
-            {initialLoading ? <ChartSkeleton /> : <StateRevenueChart data={revenueByState} />}
+            {initialLoading ? (
+              <ChartSkeleton />
+            ) : revenueByState.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <StateRevenueChart data={revenueByState} />
+            )}
           </SectionCard>
 
           <SectionCard
@@ -241,7 +292,13 @@ export default function App() {
             subtitle="participação no valor total"
             delay={0.25}
           >
-            {initialLoading ? <ChartSkeleton /> : <PaymentMethodsChart data={paymentMethods} />}
+            {initialLoading ? (
+              <ChartSkeleton />
+            ) : paymentMethods.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <PaymentMethodsChart data={paymentMethods} />
+            )}
           </SectionCard>
 
           <SectionCard
@@ -249,7 +306,13 @@ export default function App() {
             subtitle="% do valor do item, estados mais caros primeiro"
             delay={0.3}
           >
-            {initialLoading ? <ChartSkeleton /> : <FreightChart data={freightByState} />}
+            {initialLoading ? (
+              <ChartSkeleton />
+            ) : freightByState.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <FreightChart data={freightByState} />
+            )}
           </SectionCard>
 
           <SectionCard
@@ -257,7 +320,13 @@ export default function App() {
             subtitle="marketplace — lado da oferta"
             delay={0.35}
           >
-            {initialLoading ? <ChartSkeleton height={300} /> : <TopSellersChart data={topSellers} />}
+            {initialLoading ? (
+              <ChartSkeleton height={300} />
+            ) : topSellers.length === 0 ? (
+              <EmptyState height={300} />
+            ) : (
+              <TopSellersChart data={topSellers} />
+            )}
           </SectionCard>
         </div>
 

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import type { FilterOptions } from "../lib/api";
+import { humanize } from "../lib/format";
 
 interface Props {
   options: FilterOptions;
@@ -7,10 +8,6 @@ interface Props {
   selectedCategories: string[];
   onToggleState: (state: string) => void;
   onToggleCategory: (category: string) => void;
-}
-
-function humanize(category: string): string {
-  return category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function Chip({

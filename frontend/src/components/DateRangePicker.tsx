@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { subMonths } from "../lib/format";
 
 interface Props {
   minDate: string;
@@ -6,12 +7,6 @@ interface Props {
   startDate: string | null;
   endDate: string | null;
   onChange: (start: string | null, end: string | null) => void;
-}
-
-function subMonths(dateStr: string, months: number): string {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setMonth(d.getMonth() - months);
-  return d.toISOString().slice(0, 10);
 }
 
 function PresetButton({

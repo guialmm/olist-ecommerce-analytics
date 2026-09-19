@@ -8,15 +8,7 @@ import {
   YAxis,
 } from "recharts";
 import type { RevenuePoint } from "../lib/api";
-
-function formatMonth(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
-}
-
-function formatCurrency(v: number): string {
-  return `R$ ${Math.round(v).toLocaleString("pt-BR")}`;
-}
+import { formatCurrency, formatMonth } from "../lib/format";
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;

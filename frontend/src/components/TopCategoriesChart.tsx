@@ -1,11 +1,6 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CategoryRevenue } from "../lib/api";
-
-function humanize(category: string): string {
-  return category
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
+import { formatCurrency, humanize } from "../lib/format";
 
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
@@ -13,7 +8,7 @@ function CustomTooltip({ active, payload }: any) {
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
       <p className="font-semibold text-white">{humanize(p.category)}</p>
-      <p className="text-text-muted">R$ {Math.round(p.revenue).toLocaleString("pt-BR")}</p>
+      <p className="text-text-muted">{formatCurrency(p.revenue)}</p>
     </div>
   );
 }

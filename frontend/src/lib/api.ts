@@ -77,7 +77,7 @@ export interface Filters {
   endDate?: string | null;
 }
 
-function buildQuery(filters: Filters): string {
+export function buildQuery(filters: Filters): string {
   const params = new URLSearchParams();
   filters.states.forEach((s) => params.append("states", s));
   filters.categories.forEach((c) => params.append("categories", c));
@@ -87,9 +87,34 @@ function buildQuery(filters: Filters): string {
   return qs ? `?${qs}` : "";
 }
 
+/** Erro de API — carrega a mensagem que o backend devolveu (campo `detail`) quando existe. */
+export class ApiError extends Error {
+  status: number | "network";
+
+  constructor(status: number | "network", message: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
+}
+
 async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) throw new Error(`Erro ao buscar ${path}: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`);
+  } catch {
+    throw new ApiError("network", `Não foi possível conectar à API em ${API_BASE}.`);
+  }
+  if (!res.ok) {
+    let detail = `Erro ${res.status} ao buscar ${path}.`;
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      // corpo de erro não era JSON — mantém a mensagem genérica
+    }
+    throw new ApiError(res.status, detail);
+  }
   return res.json() as Promise<T>;
 }
 
