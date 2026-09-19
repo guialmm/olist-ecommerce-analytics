@@ -1,8 +1,13 @@
 """Testes de integração da API — rodam contra o MySQL real com o dataset da Olist.
 
 Requer: docker compose up -d && python etl/load_to_mysql.py
-Se o banco não estiver disponível, a suíte inteira é pulada (ver conftest.py).
+Se o banco não estiver disponível, a suíte inteira é pulada; se estiver de pé
+mas sem dados carregados, os testes deste módulo pulam (ver conftest.py).
 """
+
+import pytest
+
+pytestmark = pytest.mark.usefixtures("require_data")
 
 
 def test_health(client):

@@ -1,0 +1,104 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpass
+          MYSQL_DATABASE: olist_analytics
+          MYSQL_USER: olist_user
+          MYSQL_PASSWORD: olist_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -uroot -prootpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: 3306
+      MYSQL_USER: olist_user
+      MYSQL_PASSWORD: olist_pass
+      MYSQL_DATABASE: olist_analytics
+      JWT_SECRET_KEY: ci-test-secret
+      DEMO_USERNAME: demo
+      DEMO_PASSWORD: olist2018
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependências
+        run: pip install -r backend/requirements-dev.txt
+
+      - name: Aplicar schema
+        run: mysql -h127.0.0.1 -uroot -prootpass olist_analytics < sql/schema.sql
+
+      - name: Aplicar views
+        run: mysql -h127.0.0.1 -uroot -prootpass olist_analytics < sql/views.sql
+
+      # Os testes de integração (test_api.py) fazem asserções sobre o dataset
+      # real da Olist (ex: "SP tem a maior receita"). Isso só roda de verdade
+      # se KAGGLE_USERNAME/KAGGLE_KEY estiverem configurados como secrets do
+      # repositório — sem eles, esses testes falham por falta de dado (não é
+      # um bug do código). Os testes unitários e de autenticação não
+      # dependem de dado carregado.
+      - name: Baixar dataset real da Olist
+        if: ${{ secrets.KAGGLE_USERNAME != '' && secrets.KAGGLE_KEY != '' }}
+        env:
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        run: |
+          pip install kaggle
+          kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip
+
+      - name: Carregar dados no MySQL
+        if: ${{ secrets.KAGGLE_USERNAME != '' && secrets.KAGGLE_KEY != '' }}
+        run: python etl/load_to_mysql.py
+
+      - name: Rodar testes
+        working-directory: backend
+        run: pytest -v
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Type-check + build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Rodar testes
+        working-directory: frontend
+        run: npm test

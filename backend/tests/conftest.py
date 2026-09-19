@@ -29,6 +29,29 @@ def _require_database():
         )
 
 
+@pytest.fixture(scope="session")
+def _orders_loaded() -> bool:
+    with engine.connect() as conn:
+        count = conn.exec_driver_sql("SELECT COUNT(*) FROM orders").scalar()
+    return bool(count and count > 0)
+
+
+@pytest.fixture(scope="session")
+def require_data(_orders_loaded):
+    """Pula (não falha) testes que fazem asserções sobre o dataset real.
+
+    O schema pode estar de pé sem os dados carregados — por exemplo no CI,
+    quando os secrets do Kaggle (KAGGLE_USERNAME/KAGGLE_KEY) não estão
+    configurados no repositório. Isso não é um bug do código, então os
+    testes que dependem de dado real pulam em vez de falhar.
+    """
+    if not _orders_loaded:
+        pytest.skip(
+            "Dataset da Olist não carregado — rode `python etl/load_to_mysql.py` "
+            "(ou configure os secrets KAGGLE_USERNAME/KAGGLE_KEY no CI)."
+        )
+
+
 @pytest.fixture
 def client():
     """TestClient já autenticado — a maioria dos endpoints exige um token."""
