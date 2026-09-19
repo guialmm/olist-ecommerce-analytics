@@ -9,6 +9,7 @@ import { OrderStatusChart } from "./components/OrderStatusChart";
 import { PaymentMethodsChart } from "./components/PaymentMethodsChart";
 import { RevenueTimeseriesChart } from "./components/RevenueTimeseriesChart";
 import { SectionCard } from "./components/SectionCard";
+import { ChartSkeleton, KpiCardSkeleton } from "./components/Skeleton";
 import { StateRevenueChart } from "./components/StateRevenueChart";
 import { TopCategoriesChart } from "./components/TopCategoriesChart";
 import {
@@ -36,6 +37,7 @@ export default function App() {
   const [revenueByState, setRevenueByState] = useState<StateRevenue[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     api
@@ -65,6 +67,7 @@ export default function App() {
         setRevenueByState(rbs);
         setPaymentMethods(pm);
         setError(null);
+        setInitialLoading(false);
       })
       .catch(() => setError("Erro ao carregar os dados."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,7 +122,15 @@ export default function App() {
           </div>
         )}
 
-        {kpis && (
+        {initialLoading && (
+          <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+            <KpiCardSkeleton />
+          </div>
+        )}
+        {kpis && !initialLoading && (
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <KpiCard
               label="Receita (GMV)"
@@ -169,11 +180,11 @@ export default function App() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SectionCard title="Receita mensal (GMV)" subtitle="valor dos itens vendidos">
-            <RevenueTimeseriesChart data={revenue} />
+            {initialLoading ? <ChartSkeleton height={280} /> : <RevenueTimeseriesChart data={revenue} />}
           </SectionCard>
 
           <SectionCard title="Status dos pedidos" subtitle="volume por status" delay={0.05}>
-            <OrderStatusChart data={orderStatus} />
+            {initialLoading ? <ChartSkeleton /> : <OrderStatusChart data={orderStatus} />}
           </SectionCard>
 
           <SectionCard
@@ -181,10 +192,10 @@ export default function App() {
             subtitle="distribuição de notas (1-5 estrelas)"
             delay={0.1}
           >
-            {deliveryVsReview ? (
-              <DeliveryReviewChart data={deliveryVsReview} />
+            {initialLoading || !deliveryVsReview ? (
+              <ChartSkeleton />
             ) : (
-              <p className="py-10 text-center text-sm text-text-muted">Carregando…</p>
+              <DeliveryReviewChart data={deliveryVsReview} />
             )}
           </SectionCard>
 
@@ -193,11 +204,11 @@ export default function App() {
             subtitle="valor total vendido"
             delay={0.15}
           >
-            <TopCategoriesChart data={topCategories} />
+            {initialLoading ? <ChartSkeleton height={300} /> : <TopCategoriesChart data={topCategories} />}
           </SectionCard>
 
           <SectionCard title="Receita por estado" subtitle="top estados do cliente" delay={0.2}>
-            <StateRevenueChart data={revenueByState} />
+            {initialLoading ? <ChartSkeleton /> : <StateRevenueChart data={revenueByState} />}
           </SectionCard>
 
           <SectionCard
@@ -205,7 +216,7 @@ export default function App() {
             subtitle="participação no valor total"
             delay={0.25}
           >
-            <PaymentMethodsChart data={paymentMethods} />
+            {initialLoading ? <ChartSkeleton /> : <PaymentMethodsChart data={paymentMethods} />}
           </SectionCard>
         </div>
 
