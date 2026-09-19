@@ -32,72 +32,84 @@ def run(sql: str, **params) -> pd.DataFrame:
         return pd.read_sql(stmt, conn, params=params)
 
 
-def _filter_clauses(segments: list[str], plans: list[str], seg_col: str, plan_col: str):
+def _filter_clauses(states: list[str], categories: list[str], state_col: str, category_col: str):
     params, clauses = {}, []
-    if segments:
-        params["segments"] = tuple(segments)
-        clauses.append(f"{seg_col} IN :segments")
-    if plans:
-        params["plans"] = tuple(plans)
-        clauses.append(f"{plan_col} IN :plans")
+    if states:
+        params["states"] = tuple(states)
+        clauses.append(f"{state_col} IN :states")
+    if categories:
+        params["categories"] = tuple(categories)
+        clauses.append(f"{category_col} IN :categories")
     where = (" AND " + " AND ".join(clauses)) if clauses else ""
     return where, params
 
 
+CATEGORY_EXPR = "COALESCE(pc.category_name_english, p.category_name, 'unknown')"
+
+BASE_ORDER_ITEMS_JOIN = f"""
+    FROM orders o
+    JOIN customers c ON c.customer_id = o.customer_id
+    JOIN order_items oi ON oi.order_id = o.order_id
+    JOIN products p ON p.product_id = oi.product_id
+    LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+    WHERE o.status NOT IN ('canceled', 'unavailable')
+"""
+
+
 def get_filter_options() -> dict:
-    segments = run("SELECT DISTINCT segment FROM users ORDER BY segment")["segment"].tolist()
-    plans = run("SELECT name FROM plans ORDER BY tier")["name"].tolist()
-    return {"segments": segments, "plans": plans}
+    states = run("SELECT DISTINCT state FROM customers ORDER BY state")["state"].tolist()
+    categories = run(
+        f"""
+        SELECT {CATEGORY_EXPR} AS category, ROUND(SUM(oi.price), 2) AS revenue
+        {BASE_ORDER_ITEMS_JOIN}
+        GROUP BY category
+        ORDER BY revenue DESC
+        LIMIT 20
+        """
+    )["category"].tolist()
+    return {"states": states, "categories": categories}
 
 
-def get_kpis(segments: list[str], plans: list[str]) -> dict:
-    where, params = _filter_clauses(segments, plans, "u.segment", "p.name")
+def get_kpis(states: list[str], categories: list[str]) -> dict:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
     df = run(
         f"""
-        SELECT s.status, p.monthly_price
-        FROM subscriptions s
-        JOIN plans p ON p.id = s.plan_id
-        JOIN users u ON u.id = s.user_id
-        WHERE 1=1 {where}
+        SELECT o.order_id, oi.price
+        {BASE_ORDER_ITEMS_JOIN} {where}
         """,
         **params,
     )
-    active = df[df.status == "active"]
-    total = len(df)
-    converted = df[df.status.isin(["active", "canceled"])].shape[0]
+    revenue = float(df["price"].sum())
+    orders = df["order_id"].nunique()
+    aov = revenue / orders if orders else 0.0
+
+    delivery = run(
+        f"""
+        SELECT AVG(v.on_time) AS pct_on_time
+        FROM v_delivery_performance v
+        JOIN customers c ON c.customer_id = v.customer_id
+        {("WHERE " + f"c.state IN :states") if states else ""}
+        """,
+        **({"states": tuple(states)} if states else {}),
+    )
+    pct_on_time = float(delivery["pct_on_time"].iloc[0] or 0) * 100
+
     return {
-        "mrr": round(float(active.monthly_price.sum()), 2),
-        "active_subscriptions": int(len(active)),
-        "total_users": int(total),
-        "conversion_rate": round(converted / total * 100, 1) if total else 0.0,
+        "revenue": round(revenue, 2),
+        "orders": int(orders),
+        "avg_order_value": round(aov, 2),
+        "pct_on_time": round(pct_on_time, 1),
     }
 
 
-def get_mrr_timeseries(segments: list[str], plans: list[str]) -> list[dict]:
-    where, params = _filter_clauses(segments, plans, "segment", "plan_name")
+def get_revenue_timeseries(states: list[str], categories: list[str]) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
     df = run(
         f"""
-        SELECT active_month, ROUND(SUM(monthly_price), 2) AS mrr, COUNT(*) AS active_subscriptions
-        FROM v_subscription_months
-        WHERE 1=1 {where}
-        GROUP BY active_month
-        ORDER BY active_month
-        """,
-        **params,
-    )
-    return to_records(df)
-
-
-def get_churn_timeseries(segments: list[str], plans: list[str]) -> list[dict]:
-    where, params = _filter_clauses(segments, plans, "u.segment", "p.name")
-    df = run(
-        f"""
-        SELECT DATE_FORMAT(se.event_date, '%Y-%m-01') AS month, COUNT(*) AS cancellations
-        FROM subscription_events se
-        JOIN subscriptions s ON s.id = se.subscription_id
-        JOIN users u ON u.id = s.user_id
-        JOIN plans p ON p.id = COALESCE(se.from_plan_id, s.plan_id)
-        WHERE se.event_type = 'canceled' {where}
+        SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
+               ROUND(SUM(oi.price), 2) AS revenue,
+               COUNT(DISTINCT o.order_id) AS orders
+        {BASE_ORDER_ITEMS_JOIN} {where}
         GROUP BY month
         ORDER BY month
         """,
@@ -106,80 +118,131 @@ def get_churn_timeseries(segments: list[str], plans: list[str]) -> list[dict]:
     return to_records(df)
 
 
-def get_cohort_retention(segments: list[str], plans: list[str]) -> list[dict]:
-    where, params = _filter_clauses(segments, plans, "segment", "plan_name")
+def get_order_status(states: list[str], categories: list[str]) -> list[dict]:
+    params, clauses = {}, []
+    joins = "FROM orders o JOIN customers c ON c.customer_id = o.customer_id"
+    if categories:
+        joins += """
+            JOIN order_items oi ON oi.order_id = o.order_id
+            JOIN products p ON p.product_id = oi.product_id
+            LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+        """
+        params["categories"] = tuple(categories)
+        clauses.append(f"{CATEGORY_EXPR} IN :categories")
+    if states:
+        params["states"] = tuple(states)
+        clauses.append("c.state IN :states")
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     df = run(
         f"""
-        SELECT
-            cohort_month,
-            PERIOD_DIFF(DATE_FORMAT(active_month, '%Y%m'), DATE_FORMAT(cohort_month, '%Y%m')) AS months_since_signup,
-            COUNT(DISTINCT user_id) AS active_users
-        FROM v_subscription_months
-        WHERE 1=1 {where}
-        GROUP BY cohort_month, months_since_signup
-        ORDER BY cohort_month, months_since_signup
+        SELECT o.status, COUNT(DISTINCT o.order_id) AS n_orders
+        {joins} {where}
+        GROUP BY o.status
+        ORDER BY n_orders DESC
         """,
         **params,
     )
-    if df.empty:
-        return []
-    cohort_size = df[df.months_since_signup == 0].set_index("cohort_month")["active_users"]
-    df["cohort_size"] = df["cohort_month"].map(cohort_size)
-    df["retention_pct"] = (df["active_users"] / df["cohort_size"] * 100).round(1)
     return to_records(df)
 
 
-def get_usage_vs_churn(segments: list[str], plans: list[str]) -> dict:
-    where, params = _filter_clauses(segments, plans, "u.segment", "p.name")
+def get_delivery_vs_review(states: list[str], categories: list[str]) -> dict:
+    params: dict = {}
+    clauses = ["v.review_score IS NOT NULL"]
+    if states:
+        params["states"] = tuple(states)
+        clauses.append("c.state IN :states")
+    if categories:
+        params["categories"] = tuple(categories)
+        clauses.append(
+            f"""v.order_id IN (
+                SELECT oi.order_id FROM order_items oi
+                JOIN products p ON p.product_id = oi.product_id
+                LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+                WHERE {CATEGORY_EXPR} IN :categories
+            )"""
+        )
     df = run(
         f"""
-        SELECT s.user_id, s.status, uu.sessions
-        FROM subscriptions s
-        JOIN users u ON u.id = s.user_id
-        JOIN plans p ON p.id = s.plan_id
-        JOIN v_user_monthly_usage uu ON uu.user_id = s.user_id
-        WHERE s.status IN ('active', 'canceled') {where}
+        SELECT v.on_time, v.review_score
+        FROM v_delivery_performance v
+        JOIN customers c ON c.customer_id = v.customer_id
+        WHERE {" AND ".join(clauses)}
         """,
         **params,
     )
     if df.empty:
-        return {"retained": None, "canceled": None}
+        return {"on_time": [], "late": []}
 
-    per_user = df.groupby(["user_id", "status"])["sessions"].mean().reset_index()
-
-    def summarize(group_status: str, label: str):
-        vals = per_user[per_user.status == group_status]["sessions"]
-        if vals.empty:
-            return None
-        q1, median, q3 = vals.quantile([0.25, 0.5, 0.75])
-        return {
-            "label": label,
-            "min": round(float(vals.min()), 2),
-            "q1": round(float(q1), 2),
-            "median": round(float(median), 2),
-            "q3": round(float(q3), 2),
-            "max": round(float(vals.max()), 2),
-            "mean": round(float(vals.mean()), 2),
-            "count": int(len(vals)),
-        }
+    def score_distribution(subset: pd.DataFrame) -> list[dict]:
+        counts = subset["review_score"].value_counts().reindex(range(1, 6), fill_value=0)
+        total = int(counts.sum())
+        return [
+            {"score": int(s), "count": int(c), "pct": round(c / total * 100, 1) if total else 0.0}
+            for s, c in counts.items()
+        ]
 
     return {
-        "retained": summarize("active", "Retido"),
-        "canceled": summarize("canceled", "Cancelado"),
+        "on_time": score_distribution(df[df.on_time == 1]),
+        "late": score_distribution(df[df.on_time == 0]),
     }
 
 
-def get_revenue_by_segment(segments: list[str], plans: list[str]) -> list[dict]:
-    where, params = _filter_clauses(segments, plans, "u.segment", "p.name")
+def get_top_categories(states: list[str], categories: list[str], limit: int = 10) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
     df = run(
         f"""
-        SELECT u.segment, p.name AS plan_name, ROUND(SUM(p.monthly_price), 2) AS mrr
-        FROM subscriptions s
-        JOIN users u ON u.id = s.user_id
-        JOIN plans p ON p.id = s.plan_id
-        WHERE s.status = 'active' {where}
-        GROUP BY u.segment, p.name
-        ORDER BY u.segment
+        SELECT {CATEGORY_EXPR} AS category, ROUND(SUM(oi.price), 2) AS revenue
+        {BASE_ORDER_ITEMS_JOIN} {where}
+        GROUP BY category
+        ORDER BY revenue DESC
+        LIMIT {int(limit)}
+        """,
+        **params,
+    )
+    return to_records(df)
+
+
+def get_revenue_by_state(states: list[str], categories: list[str], limit: int = 12) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    df = run(
+        f"""
+        SELECT c.state, ROUND(SUM(oi.price), 2) AS revenue
+        {BASE_ORDER_ITEMS_JOIN} {where}
+        GROUP BY c.state
+        ORDER BY revenue DESC
+        LIMIT {int(limit)}
+        """,
+        **params,
+    )
+    return to_records(df)
+
+
+def get_payment_methods(states: list[str], categories: list[str]) -> list[dict]:
+    params: dict = {}
+    clauses = []
+    if states:
+        params["states"] = tuple(states)
+        clauses.append("c.state IN :states")
+    if categories:
+        params["categories"] = tuple(categories)
+        clauses.append(
+            f"""op.order_id IN (
+                SELECT oi.order_id FROM order_items oi
+                JOIN products p ON p.product_id = oi.product_id
+                LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+                WHERE {CATEGORY_EXPR} IN :categories
+            )"""
+        )
+    where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+    df = run(
+        f"""
+        SELECT op.payment_type, COUNT(DISTINCT op.order_id) AS n_orders, ROUND(SUM(op.value), 2) AS total_value
+        FROM order_payments op
+        JOIN orders o ON o.order_id = op.order_id
+        JOIN customers c ON c.customer_id = o.customer_id
+        {where}
+        GROUP BY op.payment_type
+        ORDER BY total_value DESC
         """,
         **params,
     )

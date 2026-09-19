@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import analytics
 
-app = FastAPI(title="SaaS Analytics API")
+app = FastAPI(title="Olist E-Commerce Analytics API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -13,8 +13,8 @@ app.add_middleware(
 )
 
 
-def _filters(segments: list[str] | None, plans: list[str] | None):
-    return segments or [], plans or []
+def _filters(states: list[str] | None, categories: list[str] | None):
+    return states or [], categories or []
 
 
 @app.get("/api/health")
@@ -28,36 +28,42 @@ def filters():
 
 
 @app.get("/api/kpis")
-def kpis(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_kpis(s, p)
-
-
-@app.get("/api/mrr")
-def mrr(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_mrr_timeseries(s, p)
-
-
-@app.get("/api/churn")
-def churn(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_churn_timeseries(s, p)
-
-
-@app.get("/api/cohort")
-def cohort(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_cohort_retention(s, p)
-
-
-@app.get("/api/usage-vs-churn")
-def usage_vs_churn(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_usage_vs_churn(s, p)
+def kpis(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_kpis(s, c)
 
 
 @app.get("/api/revenue")
-def revenue(segments: list[str] | None = Query(None), plans: list[str] | None = Query(None)):
-    s, p = _filters(segments, plans)
-    return analytics.get_revenue_by_segment(s, p)
+def revenue(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_revenue_timeseries(s, c)
+
+
+@app.get("/api/order-status")
+def order_status(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_order_status(s, c)
+
+
+@app.get("/api/delivery-vs-review")
+def delivery_vs_review(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_delivery_vs_review(s, c)
+
+
+@app.get("/api/top-categories")
+def top_categories(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_top_categories(s, c)
+
+
+@app.get("/api/revenue-by-state")
+def revenue_by_state(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_revenue_by_state(s, c)
+
+
+@app.get("/api/payment-methods")
+def payment_methods(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_payment_methods(s, c)
