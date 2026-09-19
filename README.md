@@ -1,39 +1,43 @@
-# SaaS Analytics
+# Olist E-Commerce Analytics
 
-Projeto de portfólio/estudo: banco de dados relacional próprio (MySQL) simulando
-uma empresa SaaS fictícia com assinaturas, uso de produto e churn, mais uma
-API (FastAPI) e um dashboard interativo animado (React + TypeScript + Tailwind
-+ Framer Motion) para responder perguntas de negócio.
+Projeto de portfólio/estudo: dados **reais** e anonimizados de e-commerce
+brasileiro (o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
+~100 mil pedidos entre 2016 e 2018), carregados num banco relacional próprio
+(MySQL) e servidos por uma API (FastAPI) para um dashboard animado
+(React + TypeScript + Tailwind + Framer Motion + Recharts).
 
 ## Contexto
 
-Você é o analista de dados de um SaaS B2B (planos Starter/Pro/Business) e
-precisa entender a saúde do negócio: crescimento de MRR, churn, retenção por
-cohort, LTV por segmento de cliente, e se o uso do produto prediz cancelamento.
+Você é o analista de dados de um marketplace e precisa entender a saúde do
+negócio: evolução da receita, funil de status dos pedidos, performance de
+entrega, categorias mais fortes, receita por estado e métodos de pagamento.
 
-Os dados são **sintéticos, mas gerados com padrões realistas de propósito**:
-churn mais alto nos primeiros meses, maior entre planos baratos, e
-correlacionado com baixo engajamento — para que a análise tenha sinal de
-verdade para encontrar, como em um SaaS real.
+Achado real mais forte do dataset: **pedidos entregues com atraso têm 46% de
+notas 1 estrela**, contra **62% de notas 5 estrelas nos entregues no prazo**
+— prazo de entrega é o maior driver de satisfação nesse negócio.
+
+Outro achado real: ~95% dos clientes (`customer_unique_id`) fazem só **um**
+pedido no período — recompra é raríssima, o que muda completamente que tipo
+de estratégia (aquisição vs. retenção) faz sentido pra esse negócio.
 
 ## Schema
 
-- `plans` — planos disponíveis (Starter/Pro/Business)
-- `users` — usuários cadastrados (segmento, país, data de cadastro)
-- `subscriptions` — assinatura de cada usuário (trial/active/canceled/expired)
-- `subscription_events` — trilha de eventos (trial_start, converted, upgrade, downgrade, canceled)
-- `payments` — cobranças mensais
-- `usage_events` — eventos de uso do produto (feature, sessão)
-- `support_tickets` — tickets de suporte
+- `customers` — um registro por pedido (`customer_id`); `customer_unique_id`
+  identifica a pessoa de fato entre pedidos diferentes
+- `sellers` — vendedores do marketplace
+- `product_categories` — tradução pt → en das categorias
+- `products` — catálogo (categoria, dimensões, peso)
+- `orders` — pedidos (status, timestamps de compra/aprovação/entrega)
+- `order_items` — itens de cada pedido (preço, frete, vendedor)
+- `order_payments` — pagamentos (tipo, parcelas, valor)
+- `order_reviews` — avaliações (nota 1-5, comentário)
 
 ## Stack
 
 - **MySQL 8** (Docker)
-- **Python** (Faker, pandas, numpy) para geração de dados sintéticos
-- **SQLAlchemy / PyMySQL** para ETL
+- **Python** (pandas, SQLAlchemy, PyMySQL) para o ETL
 - **FastAPI** — API REST que serve o dashboard
 - **React + TypeScript + Tailwind + Framer Motion + Recharts** — frontend animado
-- **Streamlit** — dashboard MVP anterior, mantido em `dashboard/` como referência
 
 ## Setup
 
@@ -47,14 +51,15 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt -r backend/requirements.txt
 
-# 3. Gerar dados sintéticos (grava CSVs em data/)
-python data_generation/generate_data.py
+# 3. Baixar o dataset real (precisa de conta + API key no Kaggle)
+pip install kaggle
+kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip
 
 # 4. Carregar no MySQL
 python etl/load_to_mysql.py
 
 # 5. Criar as views de análise
-mysql -h 127.0.0.1 -u saas_user -p saas_analytics < sql/views.sql
+mysql -h 127.0.0.1 -u olist_user -p olist_analytics < sql/views.sql
 # (senha em .env, MYSQL_PASSWORD)
 
 # 6. Subir a API
@@ -69,31 +74,31 @@ npm run dev
 # abre em http://localhost:5173 (API em http://localhost:8000)
 ```
 
-Alternativa rápida (dashboard MVP em Streamlit, sem precisar do frontend):
-
-```bash
-streamlit run dashboard/app.py
-```
-
 ## Explorando com SQL puro
 
 `analysis/queries.sql` tem uma bateria de queries prontas — boas para praticar
 para entrevistas (casing):
 
-1. MRR mês a mês
-2. Churn rate mensal
-3. Cohort retention (% retido por mês desde o cadastro)
-4. Funil trial → pago
-5. LTV médio por segmento
-6. Engajamento: retidos vs. cancelados
-7. Receita por segmento/plano
-8. Tickets não resolvidos vs. churn
-9. Upgrades vs. downgrades ao longo do tempo
+1. Receita (GMV) mês a mês
+2. Funil de status dos pedidos
+3. Performance de entrega (% no prazo, tempo médio)
+4. Nota média: entregas no prazo vs. atrasadas
+5. Top 10 categorias por receita
+6. Receita por estado
+7. Taxa de recompra
+8. Distribuição de método de pagamento
+9. Distribuição de notas de avaliação
+10. Ticket médio por pedido
+
+## Licença dos dados
+
+O dataset é da Olist, licenciado **CC BY-NC-SA 4.0** (uso não comercial, com
+atribuição) — por isso os CSVs não ficam versionados neste repositório, veja
+[data/README.md](data/README.md) para baixar.
 
 ## Próximos passos possíveis
 
-- Adicionar um modelo simples de previsão de churn (scikit-learn) usando
-  `v_user_monthly_usage` + tickets como features
-- Deploy do dashboard no Streamlit Community Cloud + banco gerenciado
-  (Railway/PlanetScale free tier) para link público no portfólio
-- Diagrama ER exportado (dbdiagram.io ou similar) para o README
+- Tabela `geolocation` do dataset (~1M linhas) para um mapa de calor de pedidos
+- Modelo simples prevendo nota da avaliação a partir do tempo de entrega
+- Deploy do frontend (Vercel/Netlify) + backend (Railway/Render) + banco
+  gerenciado, pra link público no portfólio
