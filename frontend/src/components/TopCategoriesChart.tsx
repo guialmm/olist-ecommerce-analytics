@@ -19,7 +19,7 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 export function TopCategoriesChart({ data }: { data: CategoryRevenue[] }) {
-  const sorted = [...data].sort((a, b) => a.revenue - b.revenue).slice(-10);
+  const sorted = [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
   return (
     <ResponsiveContainer width="100%" height={300}>

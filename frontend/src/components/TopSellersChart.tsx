@@ -16,7 +16,7 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 export function TopSellersChart({ data }: { data: TopSeller[] }) {
-  const sorted = [...data].sort((a, b) => a.revenue - b.revenue);
+  const sorted = [...data].sort((a, b) => b.revenue - a.revenue);
 
   return (
     <ResponsiveContainer width="100%" height={300}>
