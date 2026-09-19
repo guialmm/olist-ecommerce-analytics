@@ -1,96 +1,67 @@
 -- ============================================================
 -- Queries de análise de negócio — material de estudo/casing.
--- Rode sql/views.sql antes de usar este arquivo.
+-- Dataset real da Olist. Rode sql/views.sql antes de usar este arquivo.
 -- ============================================================
-USE saas_analytics;
+USE olist_analytics;
 
--- 1) MRR mês a mês
-SELECT * FROM v_mrr_by_month ORDER BY active_month;
+-- 1) Receita (GMV) mês a mês
+SELECT * FROM v_monthly_revenue ORDER BY month;
 
--- 2) Churn rate mensal
--- churn_rate = cancelamentos no mês / assinaturas ativas no início do mês
+-- 2) Funil de status dos pedidos
+SELECT status, COUNT(*) AS n_orders, ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 1) AS pct
+FROM orders
+GROUP BY status
+ORDER BY n_orders DESC;
+
+-- 3) Performance de entrega: % no prazo e tempo médio
 SELECT
-    DATE_FORMAT(se.event_date, '%Y-%m-01') AS month,
-    COUNT(*) AS cancellations
-FROM subscription_events se
-WHERE se.event_type = 'canceled'
-GROUP BY month
-ORDER BY month;
+    ROUND(AVG(on_time) * 100, 1) AS pct_on_time,
+    ROUND(AVG(delivery_days), 1) AS avg_delivery_days
+FROM v_delivery_performance;
 
--- 3) Cohort retention: % de usuários de cada cohort de cadastro ainda ativos N meses depois
+-- 4) Nota média da avaliação: entregas no prazo vs. atrasadas
+-- (a pergunta de negócio: atraso na entrega derruba a satisfação do cliente?)
 SELECT
-    cohort_month,
-    PERIOD_DIFF(DATE_FORMAT(active_month, '%Y%m'), DATE_FORMAT(cohort_month, '%Y%m')) AS months_since_signup,
-    COUNT(DISTINCT user_id) AS active_users
-FROM v_subscription_months
-GROUP BY cohort_month, months_since_signup
-ORDER BY cohort_month, months_since_signup;
+    CASE WHEN on_time = 1 THEN 'no prazo' ELSE 'atrasado' END AS entrega,
+    ROUND(AVG(review_score), 2) AS nota_media,
+    COUNT(*) AS n_pedidos
+FROM v_delivery_performance
+WHERE review_score IS NOT NULL
+GROUP BY entrega;
 
--- 4) Funil trial -> pago
-SELECT
-    status,
-    COUNT(*) AS n_subscriptions
-FROM subscriptions
-GROUP BY status;
+-- 5) Top 10 categorias por receita
+SELECT * FROM v_category_revenue ORDER BY revenue DESC LIMIT 10;
 
--- 5) LTV médio por segmento (soma de pagamentos "paid" por usuário, depois média por segmento)
+-- 6) Receita por estado
+SELECT * FROM v_state_revenue ORDER BY revenue DESC;
+
+-- 7) Taxa de recompra (clientes com mais de 1 pedido)
 SELECT
-    u.segment,
-    ROUND(AVG(user_total.total_paid), 2) AS avg_ltv
+    SUM(CASE WHEN n_orders = 1 THEN 1 ELSE 0 END)                                AS clientes_1_pedido,
+    SUM(CASE WHEN n_orders > 1 THEN 1 ELSE 0 END)                                AS clientes_recorrentes,
+    ROUND(SUM(CASE WHEN n_orders > 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2)   AS pct_recompra
+FROM v_customer_order_counts;
+
+-- 8) Distribuição de método de pagamento
+SELECT
+    payment_type,
+    COUNT(*) AS n_pagamentos,
+    ROUND(AVG(installments), 1) AS parcelas_media,
+    ROUND(SUM(value), 2) AS valor_total
+FROM order_payments
+GROUP BY payment_type
+ORDER BY valor_total DESC;
+
+-- 9) Distribuição de notas de avaliação (1 a 5)
+SELECT score, COUNT(*) AS n_reviews
+FROM order_reviews
+GROUP BY score
+ORDER BY score;
+
+-- 10) Ticket médio por pedido
+SELECT ROUND(AVG(order_total), 2) AS avg_order_value
 FROM (
-    SELECT s.user_id, SUM(pay.amount) AS total_paid
-    FROM payments pay
-    JOIN subscriptions s ON s.id = pay.subscription_id
-    WHERE pay.status = 'paid'
-    GROUP BY s.user_id
-) user_total
-JOIN users u ON u.id = user_total.user_id
-GROUP BY u.segment
-ORDER BY avg_ltv DESC;
-
--- 6) Engajamento (sessões médias/mês) comparando quem cancelou vs. quem não cancelou
--- Só considera quem converteu de fato (active/canceled) — incluir trial/expired aqui
--- distorceria "retained" pra baixo, já que quem nem virou cliente mal usou o produto.
-SELECT
-    CASE WHEN s.status = 'canceled' THEN 'canceled' ELSE 'retained' END AS group_status,
-    ROUND(AVG(uu.sessions), 2) AS avg_monthly_sessions
-FROM subscriptions s
-JOIN v_user_monthly_usage uu ON uu.user_id = s.user_id
-WHERE s.status IN ('active', 'canceled')
-GROUP BY group_status;
-
--- 7) Distribuição de planos por segmento (receita)
-SELECT
-    u.segment,
-    p.name AS plan,
-    COUNT(*) AS n_subscriptions,
-    ROUND(SUM(p.monthly_price), 2) AS mrr_contribution
-FROM subscriptions s
-JOIN users u ON u.id = s.user_id
-JOIN plans p ON p.id = s.plan_id
-WHERE s.status = 'active'
-GROUP BY u.segment, p.name
-ORDER BY u.segment, mrr_contribution DESC;
-
--- 8) Tickets de suporte não resolvidos vs. churn
-SELECT
-    CASE WHEN s.status = 'canceled' THEN 'canceled' ELSE 'retained' END AS group_status,
-    ROUND(AVG(t.open_tickets), 2) AS avg_open_tickets
-FROM subscriptions s
-JOIN (
-    SELECT user_id, SUM(CASE WHEN resolved = 0 THEN 1 ELSE 0 END) AS open_tickets
-    FROM support_tickets
-    GROUP BY user_id
-) t ON t.user_id = s.user_id
-WHERE s.status IN ('active', 'canceled')
-GROUP BY group_status;
-
--- 9) Upgrades vs downgrades ao longo do tempo
-SELECT
-    DATE_FORMAT(event_date, '%Y-%m-01') AS month,
-    event_type,
-    COUNT(*) AS n
-FROM subscription_events
-WHERE event_type IN ('upgrade', 'downgrade')
-GROUP BY month, event_type
-ORDER BY month;
+    SELECT order_id, SUM(price) AS order_total
+    FROM order_items
+    GROUP BY order_id
+) t;

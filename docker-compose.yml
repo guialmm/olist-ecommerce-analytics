@@ -1,13 +1,13 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: saas_analytics_mysql
+    container_name: olist_analytics_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
-      MYSQL_DATABASE: saas_analytics
-      MYSQL_USER: ${MYSQL_USER:-saas_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-saas_pass}
+      MYSQL_DATABASE: olist_analytics
+      MYSQL_USER: ${MYSQL_USER:-olist_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-olist_pass}
     ports:
       - "${MYSQL_PORT:-3307}:3306"
     volumes:

@@ -1,46 +1,65 @@
-USE saas_analytics;
+USE olist_analytics;
 
--- Uma linha por (assinatura, mês) em que ela esteve ativa e pagando.
--- Base para MRR, churn mensal e cohort retention.
-CREATE OR REPLACE VIEW v_subscription_months AS
+-- Receita mensal (GMV) — soma do preço dos itens por mês da compra,
+-- considerando só pedidos que não foram cancelados/indisponíveis.
+CREATE OR REPLACE VIEW v_monthly_revenue AS
 SELECT
-    s.id                AS subscription_id,
-    s.user_id,
-    u.segment,
-    DATE_FORMAT(s.start_date, '%Y-%m-01')                              AS cohort_month,
-    DATE_FORMAT(m.month_date, '%Y-%m-01')                              AS active_month,
-    p.id                AS plan_id,
-    p.name              AS plan_name,
-    p.monthly_price
-FROM subscriptions s
-JOIN users u ON u.id = s.user_id
-JOIN plans p ON p.id = s.plan_id
-JOIN (
-    -- gera uma linha por mês entre 2023-01 e 2024-12 (24 meses da simulação)
-    SELECT DATE_ADD('2023-01-01', INTERVAL n MONTH) AS month_date
-    FROM (
-        SELECT a.n + b.n * 10 AS n
-        FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4
-              UNION SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) a
-        CROSS JOIN (SELECT 0 n UNION SELECT 1 UNION SELECT 2) b
-    ) seq
-    WHERE seq.n < 24
-) m ON m.month_date >= DATE_FORMAT(s.start_date, '%Y-%m-01')
-   AND m.month_date < COALESCE(s.end_date, '2099-01-01')
-WHERE s.status IN ('active', 'canceled');
+    DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
+    ROUND(SUM(oi.price), 2)                AS revenue,
+    COUNT(DISTINCT o.order_id)              AS orders
+FROM orders o
+JOIN order_items oi ON oi.order_id = o.order_id
+WHERE o.status NOT IN ('canceled', 'unavailable')
+GROUP BY month;
 
--- MRR por mês
-CREATE OR REPLACE VIEW v_mrr_by_month AS
-SELECT active_month, ROUND(SUM(monthly_price), 2) AS mrr, COUNT(*) AS active_subscriptions
-FROM v_subscription_months
-GROUP BY active_month;
-
--- Engagement mensal por usuário (nº de sessões distintas e eventos)
-CREATE OR REPLACE VIEW v_user_monthly_usage AS
+-- Performance de entrega: só pedidos efetivamente entregues, com as duas
+-- datas presentes (algumas linhas do dataset real vêm incompletas).
+CREATE OR REPLACE VIEW v_delivery_performance AS
 SELECT
-    user_id,
-    DATE_FORMAT(event_date, '%Y-%m-01') AS usage_month,
-    COUNT(DISTINCT session_id)          AS sessions,
-    COUNT(*)                            AS events
-FROM usage_events
-GROUP BY user_id, DATE_FORMAT(event_date, '%Y-%m-01');
+    o.order_id,
+    o.customer_id,
+    DATEDIFF(o.delivered_customer_ts, o.purchase_ts) AS delivery_days,
+    CASE WHEN o.delivered_customer_ts <= o.estimated_delivery_date THEN 1 ELSE 0 END AS on_time,
+    r.score AS review_score
+FROM orders o
+LEFT JOIN order_reviews r ON r.order_id = o.order_id
+WHERE o.status = 'delivered'
+  AND o.delivered_customer_ts IS NOT NULL
+  AND o.estimated_delivery_date IS NOT NULL;
+
+-- Receita por categoria (em inglês, via tabela de tradução)
+CREATE OR REPLACE VIEW v_category_revenue AS
+SELECT
+    COALESCE(pc.category_name_english, p.category_name, 'unknown') AS category,
+    ROUND(SUM(oi.price), 2) AS revenue,
+    COUNT(*)                AS items_sold
+FROM order_items oi
+JOIN products p ON p.product_id = oi.product_id
+LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+JOIN orders o ON o.order_id = oi.order_id
+WHERE o.status NOT IN ('canceled', 'unavailable')
+GROUP BY category;
+
+-- Receita por estado do cliente
+CREATE OR REPLACE VIEW v_state_revenue AS
+SELECT
+    c.state,
+    ROUND(SUM(oi.price), 2) AS revenue,
+    COUNT(DISTINCT o.order_id) AS orders
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+JOIN order_items oi ON oi.order_id = o.order_id
+WHERE o.status NOT IN ('canceled', 'unavailable')
+GROUP BY c.state;
+
+-- Recompra: quantos pedidos cada cliente único (customer_unique_id) fez.
+-- A Olist gera um customer_id novo por pedido — customer_unique_id é quem
+-- de fato identifica a pessoa entre pedidos diferentes.
+CREATE OR REPLACE VIEW v_customer_order_counts AS
+SELECT
+    c.customer_unique_id,
+    COUNT(DISTINCT o.order_id) AS n_orders
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+WHERE o.status NOT IN ('canceled', 'unavailable')
+GROUP BY c.customer_unique_id;

@@ -1,93 +1,108 @@
--- SaaS Analytics — schema
--- Convenção: todas as tabelas em InnoDB/utf8mb4, PKs auto_increment, FKs explícitas.
+-- Olist E-Commerce Analytics — schema
+-- Modelo relacional próprio em cima do dataset público real da Olist
+-- (github.com/guialmm/olist-ecommerce-analytics). Nomes de coluna e tipos
+-- foram normalizados a partir dos CSVs originais — ver etl/load_to_mysql.py.
 
-CREATE DATABASE IF NOT EXISTS saas_analytics
+CREATE DATABASE IF NOT EXISTS olist_analytics
   CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-USE saas_analytics;
+USE olist_analytics;
 
-DROP TABLE IF EXISTS support_tickets;
-DROP TABLE IF EXISTS usage_events;
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS subscription_events;
-DROP TABLE IF EXISTS subscriptions;
-DROP TABLE IF EXISTS users;
-DROP TABLE IF EXISTS plans;
+DROP TABLE IF EXISTS order_reviews;
+DROP TABLE IF EXISTS order_payments;
+DROP TABLE IF EXISTS order_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS products;
+DROP TABLE IF EXISTS product_categories;
+DROP TABLE IF EXISTS sellers;
+DROP TABLE IF EXISTS customers;
 
-CREATE TABLE plans (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    name            VARCHAR(50)     NOT NULL,
-    tier            TINYINT         NOT NULL,      -- 1=Starter, 2=Pro, 3=Business
-    monthly_price   DECIMAL(10,2)   NOT NULL
+CREATE TABLE customers (
+    customer_id         VARCHAR(32) PRIMARY KEY,
+    customer_unique_id  VARCHAR(32) NOT NULL,
+    zip_code_prefix     VARCHAR(10) NOT NULL,
+    city                VARCHAR(100) NOT NULL,
+    state               CHAR(2) NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE users (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    name            VARCHAR(120)    NOT NULL,
-    email           VARCHAR(150)    NOT NULL UNIQUE,
-    company         VARCHAR(150)    NOT NULL,
-    segment         ENUM('Startup','SMB','Enterprise') NOT NULL,
-    country         VARCHAR(60)     NOT NULL,
-    signup_date     DATE            NOT NULL
+CREATE TABLE sellers (
+    seller_id           VARCHAR(32) PRIMARY KEY,
+    zip_code_prefix     VARCHAR(10) NOT NULL,
+    city                VARCHAR(100) NOT NULL,
+    state               CHAR(2) NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE subscriptions (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    user_id         INT             NOT NULL,
-    plan_id         INT             NOT NULL,
-    start_date      DATE            NOT NULL,
-    end_date        DATE            NULL,
-    status          ENUM('trial','active','canceled','expired') NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (plan_id) REFERENCES plans(id)
+CREATE TABLE product_categories (
+    category_name          VARCHAR(60) PRIMARY KEY,
+    category_name_english  VARCHAR(60) NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE subscription_events (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    subscription_id INT             NOT NULL,
-    event_type      ENUM('trial_start','converted','upgrade','downgrade','canceled','expired') NOT NULL,
-    event_date      DATE            NOT NULL,
-    from_plan_id    INT             NULL,
-    to_plan_id      INT             NULL,
-    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id),
-    FOREIGN KEY (from_plan_id) REFERENCES plans(id),
-    FOREIGN KEY (to_plan_id) REFERENCES plans(id)
+CREATE TABLE products (
+    product_id              VARCHAR(32) PRIMARY KEY,
+    category_name           VARCHAR(60) NULL,
+    name_length             INT NULL,
+    description_length      INT NULL,
+    photos_qty              INT NULL,
+    weight_g                INT NULL,
+    length_cm               INT NULL,
+    height_cm               INT NULL,
+    width_cm                INT NULL,
+    FOREIGN KEY (category_name) REFERENCES product_categories(category_name)
 ) ENGINE=InnoDB;
 
-CREATE TABLE payments (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    subscription_id INT             NOT NULL,
-    amount          DECIMAL(10,2)   NOT NULL,
-    payment_date    DATE            NOT NULL,
-    status          ENUM('paid','failed') NOT NULL,
-    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+CREATE TABLE orders (
+    order_id                 VARCHAR(32) PRIMARY KEY,
+    customer_id              VARCHAR(32) NOT NULL,
+    status                   VARCHAR(20) NOT NULL,
+    purchase_ts              DATETIME NOT NULL,
+    approved_ts              DATETIME NULL,
+    delivered_carrier_ts     DATETIME NULL,
+    delivered_customer_ts    DATETIME NULL,
+    estimated_delivery_date  DATE NULL,
+    FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE usage_events (
-    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    user_id         INT             NOT NULL,
-    feature         VARCHAR(60)     NOT NULL,
-    event_date      DATE            NOT NULL,
-    session_id      VARCHAR(40)     NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE order_items (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id            VARCHAR(32) NOT NULL,
+    item_seq            SMALLINT NOT NULL,
+    product_id          VARCHAR(32) NOT NULL,
+    seller_id           VARCHAR(32) NOT NULL,
+    shipping_limit_ts   DATETIME NOT NULL,
+    price               DECIMAL(10,2) NOT NULL,
+    freight_value       DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id),
+    FOREIGN KEY (product_id) REFERENCES products(product_id),
+    FOREIGN KEY (seller_id) REFERENCES sellers(seller_id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE support_tickets (
-    id              INT PRIMARY KEY AUTO_INCREMENT,
-    user_id         INT             NOT NULL,
-    created_date    DATE            NOT NULL,
-    category        ENUM('bug','billing','feature_request','onboarding','other') NOT NULL,
-    resolved        BOOLEAN         NOT NULL DEFAULT FALSE,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+CREATE TABLE order_payments (
+    id                    BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_id              VARCHAR(32) NOT NULL,
+    payment_sequential    SMALLINT NOT NULL,
+    payment_type          VARCHAR(20) NOT NULL,
+    installments          SMALLINT NOT NULL,
+    value                 DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
 ) ENGINE=InnoDB;
 
-CREATE INDEX idx_subscriptions_user ON subscriptions(user_id);
-CREATE INDEX idx_subscriptions_status ON subscriptions(status);
-CREATE INDEX idx_payments_date ON payments(payment_date);
-CREATE INDEX idx_usage_user_date ON usage_events(user_id, event_date);
-CREATE INDEX idx_tickets_user ON support_tickets(user_id);
+CREATE TABLE order_reviews (
+    review_id           VARCHAR(32) NOT NULL,
+    order_id             VARCHAR(32) NOT NULL,
+    score                TINYINT NOT NULL,
+    comment_title        VARCHAR(255) NULL,
+    comment_message      TEXT NULL,
+    creation_date        DATETIME NOT NULL,
+    answer_ts            DATETIME NULL,
+    PRIMARY KEY (review_id, order_id),
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+) ENGINE=InnoDB;
 
-INSERT INTO plans (name, tier, monthly_price) VALUES
-    ('Starter', 1, 29.00),
-    ('Pro', 2, 79.00),
-    ('Business', 3, 199.00);
+CREATE INDEX idx_customers_unique ON customers(customer_unique_id);
+CREATE INDEX idx_orders_customer ON orders(customer_id);
+CREATE INDEX idx_orders_purchase_ts ON orders(purchase_ts);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_items_order ON order_items(order_id);
+CREATE INDEX idx_items_product ON order_items(product_id);
+CREATE INDEX idx_payments_order ON order_payments(order_id);
+CREATE INDEX idx_reviews_order ON order_reviews(order_id);
