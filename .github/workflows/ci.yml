@@ -35,6 +35,10 @@ jobs:
       JWT_SECRET_KEY: ci-test-secret
       DEMO_USERNAME: demo
       DEMO_PASSWORD: olist2018
+      # `secrets` não pode ser referenciado direto em `if:` de step — passamos
+      # pelo `env` do job, que aceita ser usado em condicionais.
+      KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+      KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -59,16 +63,13 @@ jobs:
       # um bug do código). Os testes unitários e de autenticação não
       # dependem de dado carregado.
       - name: Baixar dataset real da Olist
-        if: ${{ secrets.KAGGLE_USERNAME != '' && secrets.KAGGLE_KEY != '' }}
-        env:
-          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
-          KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
+        if: ${{ env.KAGGLE_USERNAME != '' && env.KAGGLE_KEY != '' }}
         run: |
           pip install kaggle
           kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip
 
       - name: Carregar dados no MySQL
-        if: ${{ secrets.KAGGLE_USERNAME != '' && secrets.KAGGLE_KEY != '' }}
+        if: ${{ env.KAGGLE_USERNAME != '' && env.KAGGLE_KEY != '' }}
         run: python etl/load_to_mysql.py
 
       - name: Rodar testes
