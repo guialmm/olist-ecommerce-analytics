@@ -70,6 +70,71 @@ def get_filter_options() -> dict:
     return {"states": states, "categories": categories}
 
 
+def _pct_change(current: float, previous: float) -> float | None:
+    if not previous:
+        return None
+    return round((current - previous) / previous * 100, 1)
+
+
+def _monthly_trend(states: list[str], categories: list[str]) -> dict:
+    """Compara o último mês "completo" de dados contra o anterior.
+
+    O dataset real da Olist tem uma cauda de poucos dias em set/out de 2018
+    (coleta de dados interrompida no meio do mês) — meses com poucas dezenas
+    de pedidos são descartados antes de calcular a variação, senão a
+    comparação fica dominada por um artefato de coleta, não por um sinal
+    real do negócio.
+    """
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    revenue_df = run(
+        f"""
+        SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
+               SUM(oi.price) AS revenue, COUNT(DISTINCT o.order_id) AS orders
+        {BASE_ORDER_ITEMS_JOIN} {where}
+        GROUP BY month
+        HAVING orders >= 100
+        ORDER BY month
+        """,
+        **params,
+    )
+    if len(revenue_df) < 2:
+        return {}
+    last, prev = revenue_df.iloc[-1], revenue_df.iloc[-2]
+
+    delivery_where, delivery_params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    delivery_df = run(
+        f"""
+        SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
+               AVG(v.on_time) AS pct_on_time, COUNT(*) AS n
+        FROM v_delivery_performance v
+        JOIN orders o ON o.order_id = v.order_id
+        JOIN customers c ON c.customer_id = v.customer_id
+        {"JOIN order_items oi ON oi.order_id = v.order_id JOIN products p ON p.product_id = oi.product_id LEFT JOIN product_categories pc ON pc.category_name = p.category_name" if categories else ""}
+        WHERE 1=1 {delivery_where}
+        GROUP BY month
+        HAVING n >= 50
+        ORDER BY month
+        """,
+        **delivery_params,
+    )
+    on_time_delta = None
+    if len(delivery_df) >= 2 and delivery_df.iloc[-1]["month"] == last["month"]:
+        on_time_delta = round(
+            (float(delivery_df.iloc[-1]["pct_on_time"]) - float(delivery_df.iloc[-2]["pct_on_time"])) * 100, 1
+        )
+
+    last_aov = last["revenue"] / last["orders"] if last["orders"] else 0
+    prev_aov = prev["revenue"] / prev["orders"] if prev["orders"] else 0
+
+    return {
+        "latest_month": last["month"],
+        "revenue_trend_pct": _pct_change(last["revenue"], prev["revenue"]),
+        "orders_trend_pct": _pct_change(last["orders"], prev["orders"]),
+        "avg_order_value_trend_pct": _pct_change(last_aov, prev_aov),
+        "pct_on_time_trend_pct": on_time_delta,
+    }
+
+
 def get_kpis(states: list[str], categories: list[str]) -> dict:
     where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
     df = run(
@@ -99,6 +164,7 @@ def get_kpis(states: list[str], categories: list[str]) -> dict:
         "orders": int(orders),
         "avg_order_value": round(aov, 2),
         "pct_on_time": round(pct_on_time, 1),
+        **_monthly_trend(states, categories),
     }
 
 

@@ -10,6 +10,11 @@ export interface Kpis {
   orders: number;
   avg_order_value: number;
   pct_on_time: number;
+  latest_month?: string;
+  revenue_trend_pct?: number | null;
+  orders_trend_pct?: number | null;
+  avg_order_value_trend_pct?: number | null;
+  pct_on_time_trend_pct?: number | null;
 }
 
 export interface RevenuePoint {

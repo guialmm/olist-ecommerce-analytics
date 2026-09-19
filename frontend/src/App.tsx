@@ -126,28 +126,45 @@ export default function App() {
               value={kpis.revenue}
               delay={0}
               format={(v) => `R$ ${Math.round(v).toLocaleString("pt-BR")}`}
-              trend="up"
+              deltaPct={kpis.revenue_trend_pct}
+              deltaLabel="vs. mês anterior"
             />
             <KpiCard
               label="Pedidos"
               value={kpis.orders}
               delay={0.08}
               format={(v) => Math.round(v).toLocaleString("pt-BR")}
+              deltaPct={kpis.orders_trend_pct}
+              deltaLabel="vs. mês anterior"
             />
             <KpiCard
               label="Ticket médio"
               value={kpis.avg_order_value}
               delay={0.16}
               format={(v) => `R$ ${v.toFixed(2)}`}
+              deltaPct={kpis.avg_order_value_trend_pct}
+              deltaLabel="vs. mês anterior"
             />
             <KpiCard
               label="Entregas no prazo"
               value={kpis.pct_on_time}
               delay={0.24}
               format={(v) => `${v.toFixed(1)}%`}
-              trend="up"
+              deltaPct={kpis.pct_on_time_trend_pct}
+              deltaSuffix="pp"
+              deltaLabel="vs. mês anterior"
             />
           </div>
+        )}
+        {kpis?.latest_month && (
+          <p className="-mt-4 mb-6 text-[11px] text-text-muted">
+            Variações comparam o último mês completo do dataset (
+            {new Date(kpis.latest_month + "T00:00:00").toLocaleDateString("pt-BR", {
+              month: "long",
+              year: "numeric",
+            })}
+            ) com o mês anterior.
+          </p>
         )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

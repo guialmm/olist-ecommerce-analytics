@@ -6,14 +6,24 @@ interface Props {
   value: number;
   delay?: number;
   format: (v: number) => string;
-  trend?: "up" | "down" | "neutral";
+  deltaPct?: number | null;
+  deltaLabel?: string;
+  deltaSuffix?: string;
 }
 
-export function KpiCard({ label, value, delay = 0, format, trend = "neutral" }: Props) {
+export function KpiCard({
+  label,
+  value,
+  delay = 0,
+  format,
+  deltaPct,
+  deltaLabel,
+  deltaSuffix = "%",
+}: Props) {
   const animated = useCountUp(value);
-
-  const trendColor =
-    trend === "up" ? "text-up" : trend === "down" ? "text-down" : "text-text-muted";
+  const hasDelta = deltaPct !== undefined && deltaPct !== null;
+  const isUp = hasDelta && deltaPct! > 0;
+  const isDown = hasDelta && deltaPct! < 0;
 
   return (
     <motion.div
@@ -28,9 +38,13 @@ export function KpiCard({ label, value, delay = 0, format, trend = "neutral" }: 
       <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight">
         {format(animated)}
       </p>
-      {trend !== "neutral" && (
-        <p className={`mt-1 text-[11px] font-medium ${trendColor}`}>
-          {trend === "up" ? "↑ saudável" : "↓ atenção"}
+      {hasDelta && (
+        <p
+          className={`mt-1 text-[11px] font-medium ${isUp ? "text-up" : isDown ? "text-down" : "text-text-muted"}`}
+        >
+          {isUp ? "↑" : isDown ? "↓" : "→"} {Math.abs(deltaPct!).toFixed(1)}
+          {deltaSuffix}
+          {deltaLabel && <span className="text-text-muted"> {deltaLabel}</span>}
         </p>
       )}
     </motion.div>
