@@ -1,14 +1,17 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { TopSeller } from "../lib/api";
 
+interface RankedSeller extends TopSeller {
+  label: string;
+}
+
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const p = payload[0].payload as TopSeller;
+  const p = payload[0].payload as RankedSeller;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
-      <p className="font-semibold text-white">
-        {p.seller_id}… <span className="text-text-muted">({p.seller_state})</span>
-      </p>
+      <p className="font-semibold text-white">{p.label}</p>
+      <p className="text-text-muted font-mono">id: {p.seller_id}…</p>
       <p className="text-text-muted">R$ {Math.round(p.revenue).toLocaleString("pt-BR")}</p>
       <p className="text-text-muted">{p.orders} pedidos</p>
     </div>
@@ -16,7 +19,9 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 export function TopSellersChart({ data }: { data: TopSeller[] }) {
-  const sorted = [...data].sort((a, b) => b.revenue - a.revenue);
+  const sorted: RankedSeller[] = [...data]
+    .sort((a, b) => b.revenue - a.revenue)
+    .map((seller, i) => ({ ...seller, label: `#${i + 1} · ${seller.seller_state}` }));
 
   return (
     <ResponsiveContainer width="100%" height={300}>
@@ -32,12 +37,11 @@ export function TopSellersChart({ data }: { data: TopSeller[] }) {
         />
         <YAxis
           type="category"
-          dataKey="seller_id"
-          tickFormatter={(id: string) => `${id}…`}
+          dataKey="label"
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#94A3B8", fontSize: 11, fontFamily: "JetBrains Mono, monospace" }}
+          tick={{ fill: "#94A3B8", fontSize: 12 }}
           tickLine={false}
-          width={80}
+          width={64}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
         <Bar
