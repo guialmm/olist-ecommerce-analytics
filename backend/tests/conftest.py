@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
+import auth  # noqa: E402
 from db import engine  # noqa: E402
 from main import app  # noqa: E402
 
@@ -30,4 +31,14 @@ def _require_database():
 
 @pytest.fixture
 def client():
+    """TestClient já autenticado — a maioria dos endpoints exige um token."""
+    c = TestClient(app)
+    token = auth.create_access_token(auth.DEMO_USERNAME)
+    c.headers.update({"Authorization": f"Bearer {token}"})
+    return c
+
+
+@pytest.fixture
+def anon_client():
+    """Cliente sem token, para testar os próprios endpoints de autenticação."""
     return TestClient(app)

@@ -1,12 +1,14 @@
 import datetime
 import logging
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 import analytics
+import auth
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("olist_api")
@@ -16,7 +18,7 @@ app = FastAPI(title="Olist E-Commerce Analytics API")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -73,51 +75,80 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/api/filters")
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+def login(body: LoginRequest):
+    if not auth.verify_credentials(body.username, body.password):
+        raise HTTPException(status_code=401, detail="Usuário ou senha inválidos.")
+    return LoginResponse(access_token=auth.create_access_token(body.username))
+
+
+@app.get("/api/auth/me")
+def me(user: str = Depends(auth.get_current_user)):
+    return {"username": user}
+
+
+# Todo endpoint de dados exige um token válido — ver backend/auth.py.
+router = APIRouter(dependencies=[Depends(auth.get_current_user)])
+
+
+@router.get("/api/filters")
 def filters():
     return analytics.get_filter_options()
 
 
-@app.get("/api/kpis")
+@router.get("/api/kpis")
 def kpis(f: Filters = Depends()):
     return analytics.get_kpis(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/revenue")
+@router.get("/api/revenue")
 def revenue(f: Filters = Depends()):
     return analytics.get_revenue_timeseries(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/order-status")
+@router.get("/api/order-status")
 def order_status(f: Filters = Depends()):
     return analytics.get_order_status(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/delivery-vs-review")
+@router.get("/api/delivery-vs-review")
 def delivery_vs_review(f: Filters = Depends()):
     return analytics.get_delivery_vs_review(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/top-categories")
+@router.get("/api/top-categories")
 def top_categories(f: Filters = Depends()):
     return analytics.get_top_categories(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/revenue-by-state")
+@router.get("/api/revenue-by-state")
 def revenue_by_state(f: Filters = Depends()):
     return analytics.get_revenue_by_state(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/payment-methods")
+@router.get("/api/payment-methods")
 def payment_methods(f: Filters = Depends()):
     return analytics.get_payment_methods(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/freight-by-state")
+@router.get("/api/freight-by-state")
 def freight_by_state(f: Filters = Depends()):
     return analytics.get_freight_by_state(f.states, f.categories, f.start_date, f.end_date)
 
 
-@app.get("/api/top-sellers")
+@router.get("/api/top-sellers")
 def top_sellers(f: Filters = Depends()):
     return analytics.get_top_sellers(f.states, f.categories, f.start_date, f.end_date)
+
+
+app.include_router(router)
