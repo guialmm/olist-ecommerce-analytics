@@ -1,8 +1,12 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { LoginPage } from "./components/LoginPage";
-import Dashboard from "./Dashboard";
 import { api } from "./lib/api";
 import { clearToken, getToken } from "./lib/auth";
+
+// Dashboard puxa Recharts (a maior dependência do bundle) — carregar sob
+// demanda mantém a tela de login leve, já que ninguém vê o dashboard antes
+// de autenticar.
+const Dashboard = lazy(() => import("./Dashboard"));
 
 type AuthState = "checking" | "authenticated" | "unauthenticated";
 
@@ -37,5 +41,9 @@ export default function App() {
     return <LoginPage onSuccess={() => setAuthState("authenticated")} />;
   }
 
-  return <Dashboard onLogout={handleLogout} onSessionExpired={handleLogout} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen" />}>
+      <Dashboard onLogout={handleLogout} onSessionExpired={handleLogout} />
+    </Suspense>
+  );
 }
