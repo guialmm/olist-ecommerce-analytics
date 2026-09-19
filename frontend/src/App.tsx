@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Background } from "./components/Background";
+import { DateRangePicker } from "./components/DateRangePicker";
 import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
 import { FilterBar } from "./components/FilterBar";
 import { FreightChart } from "./components/FreightChart";
@@ -32,6 +33,8 @@ export default function App() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
   const [states, setStates] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState<string | null>(null);
+  const [endDate, setEndDate] = useState<string | null>(null);
 
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [revenue, setRevenue] = useState<RevenuePoint[]>([]);
@@ -54,7 +57,7 @@ export default function App() {
 
   useEffect(() => {
     if (!filterOptions) return;
-    const f = { states, categories };
+    const f = { states, categories, startDate, endDate };
     Promise.all([
       api.kpis(f),
       api.revenue(f),
@@ -81,7 +84,7 @@ export default function App() {
       })
       .catch(() => setError("Erro ao carregar os dados."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterOptions, states, categories]);
+  }, [filterOptions, states, categories, startDate, endDate]);
 
   const toggleState = (s: string) =>
     setStates((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
@@ -121,7 +124,19 @@ export default function App() {
         </motion.div>
 
         {filterOptions && (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col gap-3">
+            <div className="card-surface px-5 py-4">
+              <DateRangePicker
+                minDate={filterOptions.min_date}
+                maxDate={filterOptions.max_date}
+                startDate={startDate}
+                endDate={endDate}
+                onChange={(s, e) => {
+                  setStartDate(s);
+                  setEndDate(e);
+                }}
+              />
+            </div>
             <FilterBar
               options={filterOptions}
               selectedStates={states}

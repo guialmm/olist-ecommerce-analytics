@@ -32,7 +32,15 @@ def run(sql: str, **params) -> pd.DataFrame:
         return pd.read_sql(stmt, conn, params=params)
 
 
-def _filter_clauses(states: list[str], categories: list[str], state_col: str, category_col: str):
+def _filter_clauses(
+    states: list[str],
+    categories: list[str],
+    state_col: str,
+    category_col: str,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    date_col: str = "o.purchase_ts",
+):
     params, clauses = {}, []
     if states:
         params["states"] = tuple(states)
@@ -40,6 +48,12 @@ def _filter_clauses(states: list[str], categories: list[str], state_col: str, ca
     if categories:
         params["categories"] = tuple(categories)
         clauses.append(f"{category_col} IN :categories")
+    if start_date:
+        params["start_date"] = start_date
+        clauses.append(f"{date_col} >= :start_date")
+    if end_date:
+        params["end_date"] = end_date
+        clauses.append(f"{date_col} < DATE_ADD(:end_date, INTERVAL 1 DAY)")
     where = (" AND " + " AND ".join(clauses)) if clauses else ""
     return where, params
 
@@ -67,7 +81,13 @@ def get_filter_options() -> dict:
         LIMIT 20
         """
     )["category"].tolist()
-    return {"states": states, "categories": categories}
+    date_range = run("SELECT MIN(purchase_ts) AS min_date, MAX(purchase_ts) AS max_date FROM orders")
+    return {
+        "states": states,
+        "categories": categories,
+        "min_date": date_range["min_date"].iloc[0].strftime("%Y-%m-%d"),
+        "max_date": date_range["max_date"].iloc[0].strftime("%Y-%m-%d"),
+    }
 
 
 def _pct_change(current: float, previous: float) -> float | None:
@@ -76,8 +96,10 @@ def _pct_change(current: float, previous: float) -> float | None:
     return round((current - previous) / previous * 100, 1)
 
 
-def _monthly_trend(states: list[str], categories: list[str]) -> dict:
-    """Compara o último mês "completo" de dados contra o anterior.
+def _monthly_trend(
+    states: list[str], categories: list[str], start_date: str | None, end_date: str | None
+) -> dict:
+    """Compara o último mês "completo" de dados (dentro do período filtrado) contra o anterior.
 
     O dataset real da Olist tem uma cauda de poucos dias em set/out de 2018
     (coleta de dados interrompida no meio do mês) — meses com poucas dezenas
@@ -85,7 +107,7 @@ def _monthly_trend(states: list[str], categories: list[str]) -> dict:
     comparação fica dominada por um artefato de coleta, não por um sinal
     real do negócio.
     """
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     revenue_df = run(
         f"""
         SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
@@ -101,7 +123,9 @@ def _monthly_trend(states: list[str], categories: list[str]) -> dict:
         return {}
     last, prev = revenue_df.iloc[-1], revenue_df.iloc[-2]
 
-    delivery_where, delivery_params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    delivery_where, delivery_params = _filter_clauses(
+        states, categories, "c.state", CATEGORY_EXPR, start_date, end_date
+    )
     delivery_df = run(
         f"""
         SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
@@ -135,8 +159,10 @@ def _monthly_trend(states: list[str], categories: list[str]) -> dict:
     }
 
 
-def get_kpis(states: list[str], categories: list[str]) -> dict:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_kpis(
+    states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
+) -> dict:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT o.order_id, oi.price
@@ -148,14 +174,23 @@ def get_kpis(states: list[str], categories: list[str]) -> dict:
     orders = df["order_id"].nunique()
     aov = revenue / orders if orders else 0.0
 
+    delivery_clauses, delivery_params = [], {}
+    delivery_joins = "JOIN customers c ON c.customer_id = v.customer_id"
+    if states:
+        delivery_params["states"] = tuple(states)
+        delivery_clauses.append("c.state IN :states")
+    if start_date or end_date:
+        delivery_joins += " JOIN orders o ON o.order_id = v.order_id"
+        if start_date:
+            delivery_params["start_date"] = start_date
+            delivery_clauses.append("o.purchase_ts >= :start_date")
+        if end_date:
+            delivery_params["end_date"] = end_date
+            delivery_clauses.append("o.purchase_ts < DATE_ADD(:end_date, INTERVAL 1 DAY)")
+    delivery_where = (" WHERE " + " AND ".join(delivery_clauses)) if delivery_clauses else ""
     delivery = run(
-        f"""
-        SELECT AVG(v.on_time) AS pct_on_time
-        FROM v_delivery_performance v
-        JOIN customers c ON c.customer_id = v.customer_id
-        {("WHERE " + f"c.state IN :states") if states else ""}
-        """,
-        **({"states": tuple(states)} if states else {}),
+        f"SELECT AVG(v.on_time) AS pct_on_time FROM v_delivery_performance v {delivery_joins} {delivery_where}",
+        **delivery_params,
     )
     pct_on_time = float(delivery["pct_on_time"].iloc[0] or 0) * 100
 
@@ -164,12 +199,14 @@ def get_kpis(states: list[str], categories: list[str]) -> dict:
         "orders": int(orders),
         "avg_order_value": round(aov, 2),
         "pct_on_time": round(pct_on_time, 1),
-        **_monthly_trend(states, categories),
+        **_monthly_trend(states, categories, start_date, end_date),
     }
 
 
-def get_revenue_timeseries(states: list[str], categories: list[str]) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_revenue_timeseries(
+    states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT DATE_FORMAT(o.purchase_ts, '%Y-%m-01') AS month,
@@ -184,7 +221,9 @@ def get_revenue_timeseries(states: list[str], categories: list[str]) -> list[dic
     return to_records(df)
 
 
-def get_order_status(states: list[str], categories: list[str]) -> list[dict]:
+def get_order_status(
+    states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
+) -> list[dict]:
     params, clauses = {}, []
     joins = "FROM orders o JOIN customers c ON c.customer_id = o.customer_id"
     if categories:
@@ -198,6 +237,12 @@ def get_order_status(states: list[str], categories: list[str]) -> list[dict]:
     if states:
         params["states"] = tuple(states)
         clauses.append("c.state IN :states")
+    if start_date:
+        params["start_date"] = start_date
+        clauses.append("o.purchase_ts >= :start_date")
+    if end_date:
+        params["end_date"] = end_date
+        clauses.append("o.purchase_ts < DATE_ADD(:end_date, INTERVAL 1 DAY)")
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     df = run(
         f"""
@@ -211,9 +256,12 @@ def get_order_status(states: list[str], categories: list[str]) -> list[dict]:
     return to_records(df)
 
 
-def get_delivery_vs_review(states: list[str], categories: list[str]) -> dict:
+def get_delivery_vs_review(
+    states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
+) -> dict:
     params: dict = {}
     clauses = ["v.review_score IS NOT NULL"]
+    joins = "JOIN customers c ON c.customer_id = v.customer_id"
     if states:
         params["states"] = tuple(states)
         clauses.append("c.state IN :states")
@@ -227,11 +275,19 @@ def get_delivery_vs_review(states: list[str], categories: list[str]) -> dict:
                 WHERE {CATEGORY_EXPR} IN :categories
             )"""
         )
+    if start_date or end_date:
+        joins += " JOIN orders o ON o.order_id = v.order_id"
+        if start_date:
+            params["start_date"] = start_date
+            clauses.append("o.purchase_ts >= :start_date")
+        if end_date:
+            params["end_date"] = end_date
+            clauses.append("o.purchase_ts < DATE_ADD(:end_date, INTERVAL 1 DAY)")
     df = run(
         f"""
         SELECT v.on_time, v.review_score
         FROM v_delivery_performance v
-        JOIN customers c ON c.customer_id = v.customer_id
+        {joins}
         WHERE {" AND ".join(clauses)}
         """,
         **params,
@@ -253,8 +309,14 @@ def get_delivery_vs_review(states: list[str], categories: list[str]) -> dict:
     }
 
 
-def get_top_categories(states: list[str], categories: list[str], limit: int = 10) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_top_categories(
+    states: list[str],
+    categories: list[str],
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 10,
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT {CATEGORY_EXPR} AS category, ROUND(SUM(oi.price), 2) AS revenue
@@ -268,8 +330,14 @@ def get_top_categories(states: list[str], categories: list[str], limit: int = 10
     return to_records(df)
 
 
-def get_revenue_by_state(states: list[str], categories: list[str], limit: int = 12) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_revenue_by_state(
+    states: list[str],
+    categories: list[str],
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 12,
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT c.state, ROUND(SUM(oi.price), 2) AS revenue
@@ -283,7 +351,9 @@ def get_revenue_by_state(states: list[str], categories: list[str], limit: int = 
     return to_records(df)
 
 
-def get_payment_methods(states: list[str], categories: list[str]) -> list[dict]:
+def get_payment_methods(
+    states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
+) -> list[dict]:
     params: dict = {}
     clauses = []
     if states:
@@ -299,6 +369,12 @@ def get_payment_methods(states: list[str], categories: list[str]) -> list[dict]:
                 WHERE {CATEGORY_EXPR} IN :categories
             )"""
         )
+    if start_date:
+        params["start_date"] = start_date
+        clauses.append("o.purchase_ts >= :start_date")
+    if end_date:
+        params["end_date"] = end_date
+        clauses.append("o.purchase_ts < DATE_ADD(:end_date, INTERVAL 1 DAY)")
     where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
     df = run(
         f"""
@@ -315,8 +391,14 @@ def get_payment_methods(states: list[str], categories: list[str]) -> list[dict]:
     return to_records(df)
 
 
-def get_freight_by_state(states: list[str], categories: list[str], limit: int = 12) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_freight_by_state(
+    states: list[str],
+    categories: list[str],
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 12,
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT
@@ -333,8 +415,14 @@ def get_freight_by_state(states: list[str], categories: list[str], limit: int = 
     return to_records(df)
 
 
-def get_top_sellers(states: list[str], categories: list[str], limit: int = 10) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+def get_top_sellers(
+    states: list[str],
+    categories: list[str],
+    start_date: str | None = None,
+    end_date: str | None = None,
+    limit: int = 10,
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT

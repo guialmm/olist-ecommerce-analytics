@@ -3,6 +3,8 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export interface FilterOptions {
   states: string[];
   categories: string[];
+  min_date: string;
+  max_date: string;
 }
 
 export interface Kpis {
@@ -71,12 +73,16 @@ export interface TopSeller {
 export interface Filters {
   states: string[];
   categories: string[];
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 function buildQuery(filters: Filters): string {
   const params = new URLSearchParams();
   filters.states.forEach((s) => params.append("states", s));
   filters.categories.forEach((c) => params.append("categories", c));
+  if (filters.startDate) params.set("start_date", filters.startDate);
+  if (filters.endDate) params.set("end_date", filters.endDate);
   const qs = params.toString();
   return qs ? `?${qs}` : "";
 }

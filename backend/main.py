@@ -28,54 +28,99 @@ def filters():
 
 
 @app.get("/api/kpis")
-def kpis(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def kpis(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_kpis(s, c)
+    return analytics.get_kpis(s, c, start_date, end_date)
 
 
 @app.get("/api/revenue")
-def revenue(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def revenue(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_revenue_timeseries(s, c)
+    return analytics.get_revenue_timeseries(s, c, start_date, end_date)
 
 
 @app.get("/api/order-status")
-def order_status(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def order_status(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_order_status(s, c)
+    return analytics.get_order_status(s, c, start_date, end_date)
 
 
 @app.get("/api/delivery-vs-review")
-def delivery_vs_review(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def delivery_vs_review(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_delivery_vs_review(s, c)
+    return analytics.get_delivery_vs_review(s, c, start_date, end_date)
 
 
 @app.get("/api/top-categories")
-def top_categories(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def top_categories(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_top_categories(s, c)
+    return analytics.get_top_categories(s, c, start_date, end_date)
 
 
 @app.get("/api/revenue-by-state")
-def revenue_by_state(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def revenue_by_state(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_revenue_by_state(s, c)
+    return analytics.get_revenue_by_state(s, c, start_date, end_date)
 
 
 @app.get("/api/payment-methods")
-def payment_methods(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def payment_methods(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_payment_methods(s, c)
+    return analytics.get_payment_methods(s, c, start_date, end_date)
 
 
 @app.get("/api/freight-by-state")
-def freight_by_state(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def freight_by_state(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_freight_by_state(s, c)
+    return analytics.get_freight_by_state(s, c, start_date, end_date)
 
 
 @app.get("/api/top-sellers")
-def top_sellers(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+def top_sellers(
+    states: list[str] | None = Query(None),
+    categories: list[str] | None = Query(None),
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
     s, c = _filters(states, categories)
-    return analytics.get_top_sellers(s, c)
+    return analytics.get_top_sellers(s, c, start_date, end_date)
