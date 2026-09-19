@@ -1,5 +1,7 @@
 # Olist E-Commerce Analytics
 
+[![CI](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml)
+
 Projeto de portfólio/estudo: dados **reais** e anonimizados de e-commerce
 brasileiro (o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
 ~100 mil pedidos entre 2016 e 2018), carregados num banco relacional próprio
@@ -87,6 +89,26 @@ npm run dev
 # abre em http://localhost:5173 (API em http://localhost:8000)
 ```
 
+## CI
+
+O [workflow](.github/workflows/ci.yml) roda em todo push/PR: lint + type-check
++ build + testes do frontend, e testes do backend contra um MySQL de serviço
+(schema + views aplicados automaticamente).
+
+Por padrão os testes que fazem asserções sobre o dataset real (`test_api.py`)
+**pulam** no CI, porque o dado não vem versionado no repo (ver
+[Licença dos dados](#licença-dos-dados)). Pra rodar a suíte completa no CI
+também, configure 2 secrets no repositório do GitHub — Settings → Secrets and
+variables → Actions → New repository secret:
+
+| Secret | Valor |
+|---|---|
+| `KAGGLE_USERNAME` | seu usuário do Kaggle |
+| `KAGGLE_KEY` | sua API key (kaggle.com/settings → Create New Token) |
+
+Com isso configurado, o CI baixa o dataset e carrega no MySQL antes de rodar
+os testes — sem isso, nada quebra, só pula os testes que precisam do dado.
+
 ## Testes
 
 Backend (pytest — 46 testes: unitários nas funções puras de `analytics.py`,
@@ -145,7 +167,11 @@ atribuição) — por isso os CSVs não ficam versionados neste repositório, ve
 
 - Tabela `geolocation` do dataset (~1M linhas) para um mapa de calor de pedidos
 - Modelo simples prevendo nota da avaliação a partir do tempo de entrega
-- CI (GitHub Actions) rodando os testes a cada push
+- Combobox pesquisável nos filtros (hoje são chips com scroll)
 - Docker Compose cobrindo o stack inteiro (hoje só o MySQL)
 - Deploy do frontend (Vercel/Netlify) + backend (Railway/Render) + banco
   gerenciado, pra link público no portfólio
+
+## Licença
+
+Código sob [MIT](LICENSE). Dataset sob CC BY-NC-SA 4.0 (ver seção acima).
