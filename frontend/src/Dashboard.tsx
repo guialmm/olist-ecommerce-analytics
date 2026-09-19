@@ -116,6 +116,8 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
     setStates((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   const toggleCategory = (c: string) =>
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+  const clearStates = () => setStates([]);
+  const clearCategories = () => setCategories([]);
 
   if (error) {
     return (
@@ -181,6 +183,8 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
               selectedCategories={categories}
               onToggleState={toggleState}
               onToggleCategory={toggleCategory}
+              onClearStates={clearStates}
+              onClearCategories={clearCategories}
             />
           </div>
         )}

@@ -10,72 +10,46 @@ const options = {
   max_date: "2018-10-17",
 };
 
+function renderFilterBar(overrides: Partial<Parameters<typeof FilterBar>[0]> = {}) {
+  const props = {
+    options,
+    selectedStates: [],
+    selectedCategories: [],
+    onToggleState: vi.fn(),
+    onToggleCategory: vi.fn(),
+    onClearStates: vi.fn(),
+    onClearCategories: vi.fn(),
+    ...overrides,
+  };
+  render(<FilterBar {...props} />);
+  return props;
+}
+
 describe("FilterBar", () => {
-  it("renders a humanized label for each category", () => {
-    render(
-      <FilterBar
-        options={options}
-        selectedStates={[]}
-        selectedCategories={[]}
-        onToggleState={() => {}}
-        onToggleCategory={() => {}}
-      />,
-    );
-    expect(screen.getByText("Health Beauty")).toBeInTheDocument();
-    expect(screen.getByText("Bed Bath Table")).toBeInTheDocument();
-  });
-
-  it("calls onToggleState with the clicked state", async () => {
-    const onToggleState = vi.fn();
-    render(
-      <FilterBar
-        options={options}
-        selectedStates={[]}
-        selectedCategories={[]}
-        onToggleState={onToggleState}
-        onToggleCategory={() => {}}
-      />,
-    );
-    await userEvent.click(screen.getByText("SP"));
-    expect(onToggleState).toHaveBeenCalledWith("SP");
-  });
-
-  it("calls onToggleCategory with the raw category value, not the humanized label", async () => {
-    const onToggleCategory = vi.fn();
-    render(
-      <FilterBar
-        options={options}
-        selectedStates={[]}
-        selectedCategories={[]}
-        onToggleState={() => {}}
-        onToggleCategory={onToggleCategory}
-      />,
-    );
-    await userEvent.click(screen.getByText("Health Beauty"));
-    expect(onToggleCategory).toHaveBeenCalledWith("health_beauty");
-  });
-
-  it("shows 'todos (N)' when nothing is selected, and a count when something is", () => {
-    const { rerender } = render(
-      <FilterBar
-        options={options}
-        selectedStates={[]}
-        selectedCategories={[]}
-        onToggleState={() => {}}
-        onToggleCategory={() => {}}
-      />,
-    );
+  it("renders one selector for states and one for categories, each showing 'todos (N)'", () => {
+    renderFilterBar();
+    expect(screen.getByText("Estado")).toBeInTheDocument();
+    expect(screen.getByText("Categoria")).toBeInTheDocument();
     expect(screen.getAllByText(/todos \(2\)/)).toHaveLength(2);
+  });
 
-    rerender(
-      <FilterBar
-        options={options}
-        selectedStates={["SP"]}
-        selectedCategories={[]}
-        onToggleState={() => {}}
-        onToggleCategory={() => {}}
-      />,
-    );
+  it("opens the state dropdown and forwards the raw value to onToggleState", async () => {
+    const props = renderFilterBar();
+    await userEvent.click(screen.getByText("Estado"));
+    await userEvent.click(screen.getByText("SP"));
+    expect(props.onToggleState).toHaveBeenCalledWith("SP");
+  });
+
+  it("opens the category dropdown showing humanized labels but forwards the raw value", async () => {
+    const props = renderFilterBar();
+    await userEvent.click(screen.getByText("Categoria"));
+    expect(screen.getByText("Health Beauty")).toBeInTheDocument();
+    await userEvent.click(screen.getByText("Health Beauty"));
+    expect(props.onToggleCategory).toHaveBeenCalledWith("health_beauty");
+  });
+
+  it("shows a count instead of 'todos' once something is selected", () => {
+    renderFilterBar({ selectedStates: ["SP"] });
     expect(screen.getByText("1/2")).toBeInTheDocument();
   });
 });
