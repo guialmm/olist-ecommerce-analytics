@@ -74,6 +74,37 @@ npm run dev
 # abre em http://localhost:5173 (API em http://localhost:8000)
 ```
 
+## Testes
+
+Backend (pytest — 38 testes: unitários nas funções puras de `analytics.py` +
+integração da API contra o MySQL real; pula com uma mensagem clara se o banco
+não estiver de pé):
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
+Frontend (Vitest + Testing Library — 38 testes: funções de formatação,
+`lib/api.ts`, componentes e o fluxo completo do `App` com a API mockada):
+
+```bash
+cd frontend
+npm test          # roda uma vez
+npm run test:watch  # modo watch
+```
+
+## Tratamento de erro
+
+- **API**: parâmetros de data inválidos devolvem 422 automaticamente
+  (validação do Pydantic); `start_date` depois de `end_date` devolve 400;
+  banco fora do ar devolve 503 com mensagem clara em vez de vazar stacktrace.
+- **Frontend**: tela de erro com botão "Tentar novamente" quando a API está
+  fora do ar (mostra a mensagem real vinda do backend); cada gráfico mostra
+  "Nenhum dado para esse filtro" em vez de renderizar vazio quando uma
+  combinação de filtros não retorna resultados.
+
 ## Explorando com SQL puro
 
 `analysis/queries.sql` tem uma bateria de queries prontas — boas para praticar
