@@ -56,10 +56,35 @@ análise exige esse token. Ver [backend/auth.py](backend/auth.py).
 
 ## Setup
 
+### Opção 1 — stack inteiro via Docker (mais simples)
+
 ```bash
-# 1. Subir o MySQL (cria o schema automaticamente na primeira vez)
 cp .env.example .env
-docker compose up -d
+
+# baixar o dataset real (precisa de conta + API key no Kaggle)
+pip install kaggle
+kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip
+
+docker compose up -d --build
+```
+
+Isso sobe MySQL (schema + views criados automaticamente), API e frontend —
+falta só carregar os dados:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python etl/load_to_mysql.py
+```
+
+Abre em `http://localhost:5173` (login: `demo` / `olist2018`).
+
+### Opção 2 — rodando local (melhor pra desenvolver, com hot reload)
+
+```bash
+# 1. Subir só o MySQL
+cp .env.example .env
+docker compose up -d mysql
 
 # 2. Ambiente Python
 python3 -m venv .venv
@@ -73,15 +98,11 @@ kaggle datasets download -d olistbr/brazilian-ecommerce -p data/raw --unzip
 # 4. Carregar no MySQL
 python etl/load_to_mysql.py
 
-# 5. Criar as views de análise
-mysql -h 127.0.0.1 -u olist_user -p olist_analytics < sql/views.sql
-# (senha em .env, MYSQL_PASSWORD)
-
-# 6. Subir a API
-cd backend && uvicorn main:app --port 8000
+# 5. Subir a API
+cd backend && uvicorn main:app --reload --port 8000
 # em outro terminal:
 
-# 7. Subir o frontend
+# 6. Subir o frontend
 cd frontend
 cp .env.example .env
 npm install
