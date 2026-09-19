@@ -36,8 +36,21 @@ de estratégia (aquisição vs. retenção) faz sentido pra esse negócio.
 
 - **MySQL 8** (Docker)
 - **Python** (pandas, SQLAlchemy, PyMySQL) para o ETL
-- **FastAPI** — API REST que serve o dashboard
+- **FastAPI** — API REST que serve o dashboard, protegida por login (JWT)
 - **React + TypeScript + Tailwind + Framer Motion + Recharts** — frontend animado
+
+## Login
+
+Todo o dashboard fica atrás de autenticação. Não existe cadastro — é um
+usuário único de demonstração, com credenciais em `.env`:
+
+```
+usuário: demo
+senha:   olist2018
+```
+
+`POST /api/auth/login` devolve um JWT (12h de validade); todo endpoint de
+análise exige esse token. Ver [backend/auth.py](backend/auth.py).
 
 ## Setup
 
@@ -76,9 +89,9 @@ npm run dev
 
 ## Testes
 
-Backend (pytest — 38 testes: unitários nas funções puras de `analytics.py` +
-integração da API contra o MySQL real; pula com uma mensagem clara se o banco
-não estiver de pé):
+Backend (pytest — 46 testes: unitários nas funções puras de `analytics.py`,
+autenticação e integração da API contra o MySQL real; pula com uma mensagem
+clara se o banco não estiver de pé):
 
 ```bash
 cd backend
@@ -86,8 +99,9 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Frontend (Vitest + Testing Library — 38 testes: funções de formatação,
-`lib/api.ts`, componentes e o fluxo completo do `App` com a API mockada):
+Frontend (Vitest + Testing Library — 51 testes: funções de formatação,
+`lib/api.ts`, `lib/auth.ts`, componentes, o gate de autenticação e o fluxo
+completo do `Dashboard` com a API mockada):
 
 ```bash
 cd frontend
@@ -131,5 +145,7 @@ atribuição) — por isso os CSVs não ficam versionados neste repositório, ve
 
 - Tabela `geolocation` do dataset (~1M linhas) para um mapa de calor de pedidos
 - Modelo simples prevendo nota da avaliação a partir do tempo de entrega
+- CI (GitHub Actions) rodando os testes a cada push
+- Docker Compose cobrindo o stack inteiro (hoje só o MySQL)
 - Deploy do frontend (Vercel/Netlify) + backend (Railway/Render) + banco
   gerenciado, pra link público no portfólio
