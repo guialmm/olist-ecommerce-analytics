@@ -67,3 +67,15 @@ def revenue_by_state(states: list[str] | None = Query(None), categories: list[st
 def payment_methods(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
     s, c = _filters(states, categories)
     return analytics.get_payment_methods(s, c)
+
+
+@app.get("/api/freight-by-state")
+def freight_by_state(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_freight_by_state(s, c)
+
+
+@app.get("/api/top-sellers")
+def top_sellers(states: list[str] | None = Query(None), categories: list[str] | None = Query(None)):
+    s, c = _filters(states, categories)
+    return analytics.get_top_sellers(s, c)

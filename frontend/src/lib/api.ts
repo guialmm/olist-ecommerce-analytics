@@ -55,6 +55,19 @@ export interface PaymentMethod {
   total_value: number;
 }
 
+export interface FreightByState {
+  state: string;
+  avg_freight_pct: number;
+  avg_freight_value: number;
+}
+
+export interface TopSeller {
+  seller_id: string;
+  seller_state: string;
+  revenue: number;
+  orders: number;
+}
+
 export interface Filters {
   states: string[];
   categories: string[];
@@ -84,4 +97,7 @@ export const api = {
   topCategories: (f: Filters) => getJSON<CategoryRevenue[]>(`/api/top-categories${buildQuery(f)}`),
   revenueByState: (f: Filters) => getJSON<StateRevenue[]>(`/api/revenue-by-state${buildQuery(f)}`),
   paymentMethods: (f: Filters) => getJSON<PaymentMethod[]>(`/api/payment-methods${buildQuery(f)}`),
+  freightByState: (f: Filters) =>
+    getJSON<FreightByState[]>(`/api/freight-by-state${buildQuery(f)}`),
+  topSellers: (f: Filters) => getJSON<TopSeller[]>(`/api/top-sellers${buildQuery(f)}`),
 };

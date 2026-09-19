@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Background } from "./components/Background";
 import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
 import { FilterBar } from "./components/FilterBar";
+import { FreightChart } from "./components/FreightChart";
 import { KpiCard } from "./components/KpiCard";
 import { Nav } from "./components/Nav";
 import { OrderStatusChart } from "./components/OrderStatusChart";
@@ -12,16 +13,19 @@ import { SectionCard } from "./components/SectionCard";
 import { ChartSkeleton, KpiCardSkeleton } from "./components/Skeleton";
 import { StateRevenueChart } from "./components/StateRevenueChart";
 import { TopCategoriesChart } from "./components/TopCategoriesChart";
+import { TopSellersChart } from "./components/TopSellersChart";
 import {
   api,
   type CategoryRevenue,
   type DeliveryVsReview,
   type FilterOptions,
+  type FreightByState,
   type Kpis,
   type OrderStatusPoint,
   type PaymentMethod,
   type RevenuePoint,
   type StateRevenue,
+  type TopSeller,
 } from "./lib/api";
 
 export default function App() {
@@ -36,6 +40,8 @@ export default function App() {
   const [topCategories, setTopCategories] = useState<CategoryRevenue[]>([]);
   const [revenueByState, setRevenueByState] = useState<StateRevenue[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [freightByState, setFreightByState] = useState<FreightByState[]>([]);
+  const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
@@ -57,8 +63,10 @@ export default function App() {
       api.topCategories(f),
       api.revenueByState(f),
       api.paymentMethods(f),
+      api.freightByState(f),
+      api.topSellers(f),
     ])
-      .then(([k, rev, os, dvr, tc, rbs, pm]) => {
+      .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts]) => {
         setKpis(k);
         setRevenue(rev);
         setOrderStatus(os);
@@ -66,6 +74,8 @@ export default function App() {
         setTopCategories(tc);
         setRevenueByState(rbs);
         setPaymentMethods(pm);
+        setFreightByState(fbs);
+        setTopSellers(ts);
         setError(null);
         setInitialLoading(false);
       })
@@ -217,6 +227,22 @@ export default function App() {
             delay={0.25}
           >
             {initialLoading ? <ChartSkeleton /> : <PaymentMethodsChart data={paymentMethods} />}
+          </SectionCard>
+
+          <SectionCard
+            title="Frete por estado do cliente"
+            subtitle="% do valor do item, estados mais caros primeiro"
+            delay={0.3}
+          >
+            {initialLoading ? <ChartSkeleton /> : <FreightChart data={freightByState} />}
+          </SectionCard>
+
+          <SectionCard
+            title="Top 10 vendedores por receita"
+            subtitle="marketplace — lado da oferta"
+            delay={0.35}
+          >
+            {initialLoading ? <ChartSkeleton height={300} /> : <TopSellersChart data={topSellers} />}
           </SectionCard>
         </div>
 

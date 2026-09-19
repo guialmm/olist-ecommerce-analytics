@@ -313,3 +313,46 @@ def get_payment_methods(states: list[str], categories: list[str]) -> list[dict]:
         **params,
     )
     return to_records(df)
+
+
+def get_freight_by_state(states: list[str], categories: list[str], limit: int = 12) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    df = run(
+        f"""
+        SELECT
+            c.state,
+            ROUND(AVG(oi.freight_value / NULLIF(oi.price, 0)) * 100, 1) AS avg_freight_pct,
+            ROUND(AVG(oi.freight_value), 2) AS avg_freight_value
+        {BASE_ORDER_ITEMS_JOIN} {where}
+        GROUP BY c.state
+        ORDER BY avg_freight_pct DESC
+        LIMIT {int(limit)}
+        """,
+        **params,
+    )
+    return to_records(df)
+
+
+def get_top_sellers(states: list[str], categories: list[str], limit: int = 10) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR)
+    df = run(
+        f"""
+        SELECT
+            LEFT(oi.seller_id, 8) AS seller_id,
+            s.state AS seller_state,
+            ROUND(SUM(oi.price), 2) AS revenue,
+            COUNT(DISTINCT oi.order_id) AS orders
+        FROM orders o
+        JOIN customers c ON c.customer_id = o.customer_id
+        JOIN order_items oi ON oi.order_id = o.order_id
+        JOIN sellers s ON s.seller_id = oi.seller_id
+        JOIN products p ON p.product_id = oi.product_id
+        LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+        WHERE o.status NOT IN ('canceled', 'unavailable') {where}
+        GROUP BY oi.seller_id, s.state
+        ORDER BY revenue DESC
+        LIMIT {int(limit)}
+        """,
+        **params,
+    )
+    return to_records(df)
