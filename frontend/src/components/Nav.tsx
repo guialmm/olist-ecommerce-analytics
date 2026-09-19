@@ -10,15 +10,15 @@ export function Nav() {
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-6">
         <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent font-mono text-[11px] font-bold text-white shadow-[0_6px_20px_var(--color-accent-glow)]">
-          SA
+          OE
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold tracking-tight">SaaS Analytics</span>
-          <span className="text-[13px] text-text-muted">churn · MRR · retenção</span>
+          <span className="text-[15px] font-semibold tracking-tight">Olist Analytics</span>
+          <span className="text-[13px] text-text-muted">receita · entregas · avaliações</span>
         </div>
         <div className="ml-auto flex items-center gap-2 font-mono text-[11px] text-text-muted">
           <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
-          dados sintéticos · live query
+          dados reais · live query
         </div>
       </div>
     </motion.header>

@@ -1,48 +1,42 @@
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { ChurnPoint } from "../lib/api";
-
-function formatMonth(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
-}
+import type { StateRevenue } from "../lib/api";
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
-      <p className="mb-1 font-mono text-text-muted">{formatMonth(label)}</p>
-      <p className="font-semibold text-down">{payload[0].value} cancelamentos</p>
+      <p className="font-semibold text-white">{label}</p>
+      <p className="text-text-muted">R$ {Math.round(payload[0].value).toLocaleString("pt-BR")}</p>
     </div>
   );
 }
 
-export function ChurnChart({ data }: { data: ChurnPoint[] }) {
+export function StateRevenueChart({ data }: { data: StateRevenue[] }) {
   return (
-    <ResponsiveContainer width="100%" height={240}>
+    <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
         <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
         <XAxis
-          dataKey="month"
-          tickFormatter={formatMonth}
+          dataKey="state"
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#64748B", fontSize: 11 }}
+          tick={{ fill: "#94A3B8", fontSize: 11 }}
           tickLine={false}
-          interval={2}
         />
         <YAxis
+          tickFormatter={(v) => `${Math.round(v / 1000)}k`}
           stroke="rgba(255,255,255,0.08)"
           tick={{ fill: "#64748B", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
-          width={30}
+          width={40}
         />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(248,113,113,0.06)" }} />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
         <Bar
-          dataKey="cancellations"
-          fill="#f87171"
-          fillOpacity={0.75}
+          dataKey="revenue"
+          fill="#3B82F6"
+          fillOpacity={0.8}
           radius={[4, 4, 0, 0]}
-          animationDuration={900}
+          animationDuration={1000}
           animationEasing="ease-out"
         />
       </BarChart>

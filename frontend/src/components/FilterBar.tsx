@@ -3,10 +3,14 @@ import type { FilterOptions } from "../lib/api";
 
 interface Props {
   options: FilterOptions;
-  selectedSegments: string[];
-  selectedPlans: string[];
-  onToggleSegment: (segment: string) => void;
-  onTogglePlan: (plan: string) => void;
+  selectedStates: string[];
+  selectedCategories: string[];
+  onToggleState: (state: string) => void;
+  onToggleCategory: (category: string) => void;
+}
+
+function humanize(category: string): string {
+  return category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function Chip({
@@ -22,7 +26,7 @@ function Chip({
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.94 }}
-      className={`rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+      className={`shrink-0 rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
         active
           ? "border-accent/40 bg-accent-soft text-white"
           : "border-border text-text-muted hover:border-border-strong hover:text-text-dim"
@@ -33,46 +37,70 @@ function Chip({
   );
 }
 
+function FilterRow({
+  label,
+  count,
+  total,
+  children,
+}: {
+  label: string;
+  count: number;
+  total: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="font-mono text-[11px] uppercase tracking-wide text-text-muted">
+          {label}
+        </span>
+        <span className="font-mono text-[10px] text-text-muted">
+          {count === 0 ? `todos (${total})` : `${count}/${total}`}
+        </span>
+      </div>
+      <div className="flex gap-1.5 overflow-x-auto pb-1">{children}</div>
+    </div>
+  );
+}
+
 export function FilterBar({
   options,
-  selectedSegments,
-  selectedPlans,
-  onToggleSegment,
-  onTogglePlan,
+  selectedStates,
+  selectedCategories,
+  onToggleState,
+  onToggleCategory,
 }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-      className="card-surface flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-4"
+      className="card-surface flex flex-col gap-3 px-5 py-4"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 font-mono text-[11px] uppercase tracking-wide text-text-muted">
-          Segmento
-        </span>
-        {options.segments.map((s) => (
+      <FilterRow label="Estado" count={selectedStates.length} total={options.states.length}>
+        {options.states.map((s) => (
           <Chip
             key={s}
             label={s}
-            active={selectedSegments.includes(s)}
-            onClick={() => onToggleSegment(s)}
+            active={selectedStates.includes(s)}
+            onClick={() => onToggleState(s)}
           />
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="mr-1 font-mono text-[11px] uppercase tracking-wide text-text-muted">
-          Plano
-        </span>
-        {options.plans.map((p) => (
+      </FilterRow>
+      <FilterRow
+        label="Categoria"
+        count={selectedCategories.length}
+        total={options.categories.length}
+      >
+        {options.categories.map((c) => (
           <Chip
-            key={p}
-            label={p}
-            active={selectedPlans.includes(p)}
-            onClick={() => onTogglePlan(p)}
+            key={c}
+            label={humanize(c)}
+            active={selectedCategories.includes(c)}
+            onClick={() => onToggleCategory(c)}
           />
         ))}
-      </div>
+      </FilterRow>
     </motion.div>
   );
 }

@@ -1,78 +1,79 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Background } from "./components/Background";
-import { ChurnChart } from "./components/ChurnChart";
-import { CohortHeatmap } from "./components/CohortHeatmap";
+import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
 import { FilterBar } from "./components/FilterBar";
 import { KpiCard } from "./components/KpiCard";
-import { MrrChart } from "./components/MrrChart";
 import { Nav } from "./components/Nav";
-import { RevenueChart } from "./components/RevenueChart";
+import { OrderStatusChart } from "./components/OrderStatusChart";
+import { PaymentMethodsChart } from "./components/PaymentMethodsChart";
+import { RevenueTimeseriesChart } from "./components/RevenueTimeseriesChart";
 import { SectionCard } from "./components/SectionCard";
-import { UsageBoxPlot } from "./components/UsageBoxPlot";
+import { StateRevenueChart } from "./components/StateRevenueChart";
+import { TopCategoriesChart } from "./components/TopCategoriesChart";
 import {
   api,
-  type ChurnPoint,
-  type CohortCell,
+  type CategoryRevenue,
+  type DeliveryVsReview,
   type FilterOptions,
   type Kpis,
-  type MrrPoint,
+  type OrderStatusPoint,
+  type PaymentMethod,
   type RevenuePoint,
-  type UsageVsChurn,
+  type StateRevenue,
 } from "./lib/api";
 
 export default function App() {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [segments, setSegments] = useState<string[]>([]);
-  const [plans, setPlans] = useState<string[]>([]);
+  const [states, setStates] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const [kpis, setKpis] = useState<Kpis | null>(null);
-  const [mrr, setMrr] = useState<MrrPoint[]>([]);
-  const [churn, setChurn] = useState<ChurnPoint[]>([]);
-  const [cohort, setCohort] = useState<CohortCell[]>([]);
-  const [usage, setUsage] = useState<UsageVsChurn | null>(null);
   const [revenue, setRevenue] = useState<RevenuePoint[]>([]);
+  const [orderStatus, setOrderStatus] = useState<OrderStatusPoint[]>([]);
+  const [deliveryVsReview, setDeliveryVsReview] = useState<DeliveryVsReview | null>(null);
+  const [topCategories, setTopCategories] = useState<CategoryRevenue[]>([]);
+  const [revenueByState, setRevenueByState] = useState<StateRevenue[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     api
       .filterOptions()
-      .then((opts) => {
-        setFilterOptions(opts);
-        setSegments(opts.segments);
-        setPlans(opts.plans);
-      })
+      .then(setFilterOptions)
       .catch(() => setError("Não foi possível conectar à API em http://localhost:8000."));
   }, []);
 
   useEffect(() => {
     if (!filterOptions) return;
-    const f = { segments, plans };
+    const f = { states, categories };
     Promise.all([
       api.kpis(f),
-      api.mrr(f),
-      api.churn(f),
-      api.cohort(f),
-      api.usageVsChurn(f),
       api.revenue(f),
+      api.orderStatus(f),
+      api.deliveryVsReview(f),
+      api.topCategories(f),
+      api.revenueByState(f),
+      api.paymentMethods(f),
     ])
-      .then(([k, m, c, co, u, r]) => {
+      .then(([k, rev, os, dvr, tc, rbs, pm]) => {
         setKpis(k);
-        setMrr(m);
-        setChurn(c);
-        setCohort(co);
-        setUsage(u);
-        setRevenue(r);
+        setRevenue(rev);
+        setOrderStatus(os);
+        setDeliveryVsReview(dvr);
+        setTopCategories(tc);
+        setRevenueByState(rbs);
+        setPaymentMethods(pm);
         setError(null);
       })
       .catch(() => setError("Erro ao carregar os dados."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterOptions, segments, plans]);
+  }, [filterOptions, states, categories]);
 
-  const toggleSegment = (s: string) =>
-    setSegments((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
-  const togglePlan = (p: string) =>
-    setPlans((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
+  const toggleState = (s: string) =>
+    setStates((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+  const toggleCategory = (c: string) =>
+    setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
 
   if (error) {
     return (
@@ -101,7 +102,8 @@ export default function App() {
         >
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-[13px] text-text-dim">
-            Saúde de um SaaS fictício — MRR, churn, retenção por cohort e uso do produto.
+            Olist — e-commerce brasileiro real (2016-2018): receita, entregas, categorias e
+            avaliações.
           </p>
         </motion.div>
 
@@ -109,10 +111,10 @@ export default function App() {
           <div className="mb-6">
             <FilterBar
               options={filterOptions}
-              selectedSegments={segments}
-              selectedPlans={plans}
-              onToggleSegment={toggleSegment}
-              onTogglePlan={togglePlan}
+              selectedStates={states}
+              selectedCategories={categories}
+              onToggleState={toggleState}
+              onToggleCategory={toggleCategory}
             />
           </div>
         )}
@@ -120,27 +122,27 @@ export default function App() {
         {kpis && (
           <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
             <KpiCard
-              label="MRR atual"
-              value={kpis.mrr}
+              label="Receita (GMV)"
+              value={kpis.revenue}
               delay={0}
-              format={(v) => `US$ ${Math.round(v).toLocaleString("pt-BR")}`}
+              format={(v) => `R$ ${Math.round(v).toLocaleString("pt-BR")}`}
               trend="up"
             />
             <KpiCard
-              label="Assinaturas ativas"
-              value={kpis.active_subscriptions}
+              label="Pedidos"
+              value={kpis.orders}
               delay={0.08}
               format={(v) => Math.round(v).toLocaleString("pt-BR")}
             />
             <KpiCard
-              label="Usuários (filtro)"
-              value={kpis.total_users}
+              label="Ticket médio"
+              value={kpis.avg_order_value}
               delay={0.16}
-              format={(v) => Math.round(v).toLocaleString("pt-BR")}
+              format={(v) => `R$ ${v.toFixed(2)}`}
             />
             <KpiCard
-              label="Conversão trial→pago"
-              value={kpis.conversion_rate}
+              label="Entregas no prazo"
+              value={kpis.pct_on_time}
               delay={0.24}
               format={(v) => `${v.toFixed(1)}%`}
               trend="up"
@@ -149,45 +151,50 @@ export default function App() {
         )}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <SectionCard title="MRR ao longo do tempo" subtitle="receita recorrente mensal">
-            <MrrChart data={mrr} />
+          <SectionCard title="Receita mensal (GMV)" subtitle="valor dos itens vendidos">
+            <RevenueTimeseriesChart data={revenue} />
           </SectionCard>
 
-          <SectionCard title="Cancelamentos por mês" subtitle="volume de churn" delay={0.05}>
-            <ChurnChart data={churn} />
+          <SectionCard title="Status dos pedidos" subtitle="volume por status" delay={0.05}>
+            <OrderStatusChart data={orderStatus} />
           </SectionCard>
 
           <SectionCard
-            title="Cohort retention"
-            subtitle="% ativos por mês desde o cadastro"
+            title="Entrega no prazo × nota da avaliação"
+            subtitle="distribuição de notas (1-5 estrelas)"
             delay={0.1}
           >
-            <CohortHeatmap data={cohort} />
-          </SectionCard>
-
-          <SectionCard
-            title="Uso do produto: retidos vs. cancelados"
-            subtitle="sessões médias/mês por usuário"
-            delay={0.15}
-          >
-            {usage?.retained && usage?.canceled ? (
-              <UsageBoxPlot retained={usage.retained} canceled={usage.canceled} />
+            {deliveryVsReview ? (
+              <DeliveryReviewChart data={deliveryVsReview} />
             ) : (
-              <p className="py-10 text-center text-sm text-text-muted">Sem dados suficientes.</p>
+              <p className="py-10 text-center text-sm text-text-muted">Carregando…</p>
             )}
           </SectionCard>
 
           <SectionCard
-            title="Receita por segmento e plano"
-            subtitle="assinaturas ativas"
-            delay={0.2}
+            title="Top 10 categorias por receita"
+            subtitle="valor total vendido"
+            delay={0.15}
           >
-            <RevenueChart data={revenue} />
+            <TopCategoriesChart data={topCategories} />
+          </SectionCard>
+
+          <SectionCard title="Receita por estado" subtitle="top estados do cliente" delay={0.2}>
+            <StateRevenueChart data={revenueByState} />
+          </SectionCard>
+
+          <SectionCard
+            title="Métodos de pagamento"
+            subtitle="participação no valor total"
+            delay={0.25}
+          >
+            <PaymentMethodsChart data={paymentMethods} />
           </SectionCard>
         </div>
 
         <footer className="mt-10 pb-6 text-center font-mono text-[11px] text-text-muted">
-          dados sintéticos gerados para fins de estudo — não representam uma empresa real
+          dados reais e anonimizados — Brazilian E-Commerce Public Dataset by Olist (Kaggle,
+          CC BY-NC-SA 4.0)
         </footer>
       </main>
     </div>
