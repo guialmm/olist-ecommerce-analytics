@@ -72,6 +72,15 @@ export interface TopSeller {
   orders: number;
 }
 
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+  city: string;
+  state: string;
+  revenue: number;
+  orders: number;
+}
+
 export interface Filters {
   states: string[];
   categories: string[];
@@ -137,4 +146,5 @@ export const api = {
   freightByState: (f: Filters) =>
     getJSON<FreightByState[]>(`/api/freight-by-state${buildQuery(f)}`),
   topSellers: (f: Filters) => getJSON<TopSeller[]>(`/api/top-sellers${buildQuery(f)}`),
+  geoDensity: (f: Filters) => getJSON<GeoPoint[]>(`/api/geo-density${buildQuery(f)}`),
 };

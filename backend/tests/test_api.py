@@ -136,3 +136,29 @@ def test_category_filter_narrows_results_consistently(client):
     filtered = client.get("/api/top-categories", params={"categories": top_category}).json()
     assert len(filtered) == 1
     assert filtered[0]["category"] == top_category
+
+
+def test_geo_density_returns_points_with_valid_brazil_coordinates(client):
+    res = client.get("/api/geo-density")
+    assert res.status_code == 200
+    rows = res.json()
+    assert len(rows) > 0
+    for row in rows[:50]:
+        assert -34 <= row["lat"] <= 6
+        assert -74 <= row["lng"] <= -32
+        assert row["orders"] > 0
+        assert row["revenue"] > 0
+
+
+def test_geo_density_filtered_by_state_only_returns_that_state(client):
+    res = client.get("/api/geo-density", params={"states": "SP"})
+    assert res.status_code == 200
+    rows = res.json()
+    assert len(rows) > 0
+    assert all(row["state"] == "SP" for row in rows)
+
+
+def test_geo_density_unknown_state_returns_empty_list(client):
+    res = client.get("/api/geo-density", params={"states": "ZZ"})
+    assert res.status_code == 200
+    assert res.json() == []

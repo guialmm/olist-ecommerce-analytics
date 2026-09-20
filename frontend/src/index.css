@@ -78,6 +78,13 @@ body {
   border-radius: 12px;
 }
 
+/* Esri é a base de mapa dark gratuita sem marca d'água disponível, mas o
+   cinza claro destoa do tema escuro — inverte só o tile pane (não a camada
+   de calor por cima) pra aproximar da paleta navy do resto do dashboard. */
+.geo-heatmap .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(185deg) brightness(0.85) contrast(0.9) saturate(0.5);
+}
+
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;

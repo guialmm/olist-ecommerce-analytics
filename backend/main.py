@@ -151,4 +151,9 @@ def top_sellers(f: Filters = Depends()):
     return analytics.get_top_sellers(f.states, f.categories, f.start_date, f.end_date)
 
 
+@router.get("/api/geo-density")
+def geo_density(f: Filters = Depends()):
+    return analytics.get_geo_density(f.states, f.categories, f.start_date, f.end_date)
+
+
 app.include_router(router)

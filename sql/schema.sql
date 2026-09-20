@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS product_categories;
 DROP TABLE IF EXISTS sellers;
 DROP TABLE IF EXISTS customers;
+DROP TABLE IF EXISTS geolocation;
 
 CREATE TABLE customers (
     customer_id         VARCHAR(32) PRIMARY KEY,
@@ -28,6 +29,17 @@ CREATE TABLE customers (
 CREATE TABLE sellers (
     seller_id           VARCHAR(32) PRIMARY KEY,
     zip_code_prefix     VARCHAR(10) NOT NULL,
+    city                VARCHAR(100) NOT NULL,
+    state               CHAR(2) NOT NULL
+) ENGINE=InnoDB;
+
+-- Uma linha por prefixo de CEP (lat/lng médios) — o CSV bruto da Olist tem
+-- ~1M linhas (várias coordenadas por CEP); agregamos no ETL pra manter só
+-- o que é de fato útil pro heatmap (~19 mil prefixos únicos).
+CREATE TABLE geolocation (
+    zip_code_prefix     VARCHAR(10) PRIMARY KEY,
+    lat                 DECIMAL(9,6) NOT NULL,
+    lng                 DECIMAL(9,6) NOT NULL,
     city                VARCHAR(100) NOT NULL,
     state               CHAR(2) NOT NULL
 ) ENGINE=InnoDB;

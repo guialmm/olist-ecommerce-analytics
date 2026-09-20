@@ -63,6 +63,35 @@ def load_sellers() -> pd.DataFrame:
     )[["seller_id", "zip_code_prefix", "city", "state"]]
 
 
+def load_geolocation() -> pd.DataFrame:
+    # ~1M linhas no CSV bruto, várias coordenadas por prefixo de CEP —
+    # agregamos pra 1 linha por prefixo (média de lat/lng, cidade/estado
+    # mais frequentes) antes de carregar no MySQL.
+    df = pd.read_csv(require("olist_geolocation_dataset.csv")).rename(
+        columns={
+            "geolocation_zip_code_prefix": "zip_code_prefix",
+            "geolocation_lat": "lat",
+            "geolocation_lng": "lng",
+            "geolocation_city": "city",
+            "geolocation_state": "state",
+        }
+    )
+    # Algumas coordenadas do dataset caem fora do Brasil (erro de geocoding
+    # upstream) — descarta antes de agregar, senão distorce a média.
+    df = df[df["lat"].between(-34, 6) & df["lng"].between(-74, -32)]
+
+    def most_common(s: pd.Series) -> str:
+        return s.mode().iloc[0]
+
+    agg = df.groupby("zip_code_prefix").agg(
+        lat=("lat", "mean"),
+        lng=("lng", "mean"),
+        city=("city", most_common),
+        state=("state", most_common),
+    )
+    return agg.reset_index()
+
+
 def load_categories() -> pd.DataFrame:
     df = pd.read_csv(require("product_category_name_translation.csv"))
     return df.rename(
@@ -167,6 +196,7 @@ def main():
     categories = load_categories()
     customers = load_customers()
     sellers = load_sellers()
+    geolocation = load_geolocation()
     products = load_products(set(categories["category_name"]))
     orders = load_orders(set(customers["customer_id"]))
     order_items = load_order_items(
@@ -179,6 +209,7 @@ def main():
         ("product_categories", categories),
         ("customers", customers),
         ("sellers", sellers),
+        ("geolocation", geolocation),
         ("products", products),
         ("orders", orders),
         ("order_items", order_items),

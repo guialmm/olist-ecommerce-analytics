@@ -44,6 +44,11 @@ const { filterOptions, mockApi } = vi.hoisted(() => {
       topSellers: vi
         .fn()
         .mockResolvedValue([{ seller_id: "abcd1234", seller_state: "SP", revenue: 100, orders: 3 }]),
+      geoDensity: vi
+        .fn()
+        .mockResolvedValue([
+          { lat: -23.55, lng: -46.63, city: "sao paulo", state: "SP", revenue: 100, orders: 3 },
+        ]),
     },
   };
 });
@@ -52,6 +57,16 @@ vi.mock("./lib/api", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./lib/api")>();
   return { ...actual, api: mockApi };
 });
+
+// react-leaflet/leaflet.heat fazem bastante coisa que o jsdom não suporta
+// bem (canvas, ResizeObserver, tiles reais) — como os outros gráficos
+// (Recharts) também não têm teste próprio, aqui só garantimos que o
+// Dashboard passa os dados certos, sem montar o mapa de verdade.
+vi.mock("./components/GeoHeatmap", () => ({
+  GeoHeatmap: ({ data }: { data: unknown[] }) => (
+    <div data-testid="geo-heatmap-stub">{data.length} pontos</div>
+  ),
+}));
 
 describe("Dashboard", () => {
   afterEach(() => {
@@ -65,6 +80,8 @@ describe("Dashboard", () => {
       timeout: 3000,
     });
     expect(screen.getByText("98.199")).toBeInTheDocument();
+    expect(screen.getByText("Mapa de calor de pedidos")).toBeInTheDocument();
+    expect(screen.getByTestId("geo-heatmap-stub")).toHaveTextContent("1 pontos");
   });
 
   it("shows a friendly error with a retry button when the API is unreachable, and recovers on retry", async () => {

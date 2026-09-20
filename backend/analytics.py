@@ -415,6 +415,33 @@ def get_freight_by_state(
     return to_records(df)
 
 
+def get_geo_density(
+    states: list[str],
+    categories: list[str],
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> list[dict]:
+    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
+    df = run(
+        f"""
+        SELECT
+            g.lat, g.lng, g.city, g.state,
+            ROUND(SUM(oi.price), 2)    AS revenue,
+            COUNT(DISTINCT o.order_id) AS orders
+        FROM orders o
+        JOIN customers c ON c.customer_id = o.customer_id
+        JOIN order_items oi ON oi.order_id = o.order_id
+        JOIN products p ON p.product_id = oi.product_id
+        LEFT JOIN product_categories pc ON pc.category_name = p.category_name
+        JOIN geolocation g ON g.zip_code_prefix = c.zip_code_prefix
+        WHERE o.status NOT IN ('canceled', 'unavailable') {where}
+        GROUP BY g.lat, g.lng, g.city, g.state
+        """,
+        **params,
+    )
+    return to_records(df)
+
+
 def get_top_sellers(
     states: list[str],
     categories: list[str],

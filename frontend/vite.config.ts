@@ -12,6 +12,12 @@ export default defineConfig({
           if (!id.includes('node_modules')) return
           if (id.includes('recharts')) return 'recharts'
           if (id.includes('framer-motion')) return 'framer-motion'
+          // leaflet.heat fica de fora do chunk 'leaflet': ele só é
+          // carregado via import() dinâmico (ver GeoHeatmap.tsx) pra
+          // garantir que window.L já existe antes do plugin rodar — se
+          // cair no mesmo chunk síncrono do leaflet, o bundler otimiza o
+          // import dinâmico pra estático e quebra essa garantia de ordem.
+          if (id.includes('leaflet') && !id.includes('leaflet.heat')) return 'leaflet'
           if (id.includes('react-dom') || id.includes('/react/')) return 'react'
         },
       },

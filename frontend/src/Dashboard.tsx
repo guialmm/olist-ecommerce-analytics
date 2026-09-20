@@ -6,6 +6,7 @@ import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
 import { EmptyState } from "./components/EmptyState";
 import { FilterBar } from "./components/FilterBar";
 import { FreightChart } from "./components/FreightChart";
+import { GeoHeatmap } from "./components/GeoHeatmap";
 import { KpiCard } from "./components/KpiCard";
 import { Nav } from "./components/Nav";
 import { OrderStatusChart } from "./components/OrderStatusChart";
@@ -23,6 +24,7 @@ import {
   type DeliveryVsReview,
   type FilterOptions,
   type FreightByState,
+  type GeoPoint,
   type Kpis,
   type OrderStatusPoint,
   type PaymentMethod,
@@ -57,6 +59,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [freightByState, setFreightByState] = useState<FreightByState[]>([]);
   const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
+  const [geoDensity, setGeoDensity] = useState<GeoPoint[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [retryTick, setRetryTick] = useState(0);
@@ -92,8 +95,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
       api.paymentMethods(f),
       api.freightByState(f),
       api.topSellers(f),
+      api.geoDensity(f),
     ])
-      .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts]) => {
+      .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts, geo]) => {
         setKpis(k);
         setRevenue(rev);
         setOrderStatus(os);
@@ -103,6 +107,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         setPaymentMethods(pm);
         setFreightByState(fbs);
         setTopSellers(ts);
+        setGeoDensity(geo);
         setError(null);
         setInitialLoading(false);
       })
@@ -244,6 +249,21 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             ) com o mês anterior.
           </p>
         )}
+
+        <div className="mb-6">
+          <SectionCard
+            title="Mapa de calor de pedidos"
+            subtitle="densidade geográfica por CEP do cliente"
+          >
+            {initialLoading ? (
+              <ChartSkeleton height={420} />
+            ) : geoDensity.length === 0 ? (
+              <EmptyState height={420} />
+            ) : (
+              <GeoHeatmap data={geoDensity} />
+            )}
+          </SectionCard>
+        </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SectionCard title="Receita mensal (GMV)" subtitle="valor dos itens vendidos">

@@ -52,6 +52,24 @@ JOIN order_items oi ON oi.order_id = o.order_id
 WHERE o.status NOT IN ('canceled', 'unavailable')
 GROUP BY c.state;
 
+-- Densidade geográfica de pedidos: 1 linha por prefixo de CEP do cliente,
+-- com coordenadas médias (tabela geolocation) — base do mapa de calor.
+CREATE OR REPLACE VIEW v_geo_density AS
+SELECT
+    c.zip_code_prefix,
+    g.lat,
+    g.lng,
+    g.city,
+    g.state,
+    ROUND(SUM(oi.price), 2)   AS revenue,
+    COUNT(DISTINCT o.order_id) AS orders
+FROM orders o
+JOIN customers c ON c.customer_id = o.customer_id
+JOIN order_items oi ON oi.order_id = o.order_id
+JOIN geolocation g ON g.zip_code_prefix = c.zip_code_prefix
+WHERE o.status NOT IN ('canceled', 'unavailable')
+GROUP BY c.zip_code_prefix, g.lat, g.lng, g.city, g.state;
+
 -- Recompra: quantos pedidos cada cliente único (customer_unique_id) fez.
 -- A Olist gera um customer_id novo por pedido — customer_unique_id é quem
 -- de fato identifica a pessoa entre pedidos diferentes.
