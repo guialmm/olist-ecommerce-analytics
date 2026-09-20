@@ -316,7 +316,11 @@ def get_top_categories(
     end_date: str | None = None,
     limit: int = 10,
 ) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
+    # Ignora o próprio filtro de categoria: esse gráfico compara categorias
+    # entre si, então precisa continuar mostrando todas (o frontend destaca
+    # a selecionada) em vez de encolher pra uma barra só quando o usuário
+    # clica numa delas pra filtrar o resto do dashboard.
+    where, params = _filter_clauses(states, [], "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT {CATEGORY_EXPR} AS category, ROUND(SUM(oi.price), 2) AS revenue
@@ -337,7 +341,8 @@ def get_revenue_by_state(
     end_date: str | None = None,
     limit: int = 12,
 ) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
+    # Ignora o próprio filtro de estado — mesmo motivo de get_top_categories.
+    where, params = _filter_clauses([], categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT c.state, ROUND(SUM(oi.price), 2) AS revenue
@@ -398,7 +403,8 @@ def get_freight_by_state(
     end_date: str | None = None,
     limit: int = 12,
 ) -> list[dict]:
-    where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
+    # Ignora o próprio filtro de estado — mesmo motivo de get_top_categories.
+    where, params = _filter_clauses([], categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
         SELECT

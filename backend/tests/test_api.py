@@ -130,12 +130,34 @@ def test_top_sellers_returns_short_ids_not_full_hash(client):
         assert len(row["seller_id"]) == 8
 
 
-def test_category_filter_narrows_results_consistently(client):
+def test_category_filter_does_not_narrow_top_categories(client):
+    # top-categories, revenue-by-state e freight-by-state ignoram o próprio
+    # filtro da dimensão que exibem de propósito — são gráficos de
+    # comparação (o frontend destaca a barra selecionada em vez de
+    # encolher o gráfico pra uma barra só quando o usuário clica pra
+    # filtrar o resto do dashboard).
+    unfiltered = client.get("/api/top-categories").json()
     res = client.get("/api/filters").json()
     top_category = res["categories"][0]
     filtered = client.get("/api/top-categories", params={"categories": top_category}).json()
-    assert len(filtered) == 1
-    assert filtered[0]["category"] == top_category
+    assert len(filtered) == len(unfiltered)
+
+
+def test_category_filter_still_narrows_other_endpoints(client):
+    res = client.get("/api/filters").json()
+    top_category = res["categories"][0]
+    total = client.get("/api/kpis").json()
+    filtered = client.get("/api/kpis", params={"categories": top_category}).json()
+    assert filtered["revenue"] < total["revenue"]
+
+
+def test_state_filter_does_not_narrow_revenue_by_state_or_freight_by_state(client):
+    unfiltered_revenue = client.get("/api/revenue-by-state").json()
+    unfiltered_freight = client.get("/api/freight-by-state").json()
+    filtered_revenue = client.get("/api/revenue-by-state", params={"states": "SP"}).json()
+    filtered_freight = client.get("/api/freight-by-state", params={"states": "SP"}).json()
+    assert len(filtered_revenue) == len(unfiltered_revenue)
+    assert len(filtered_freight) == len(unfiltered_freight)
 
 
 def test_geo_density_returns_points_with_valid_brazil_coordinates(client):
