@@ -13,7 +13,7 @@ import { formatCurrency, formatMonth } from "../lib/format";
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="mb-1 font-mono text-text-muted">{formatMonth(label)}</p>
       <p className="font-semibold text-white">{formatCurrency(payload[0].value)}</p>
       <p className="text-text-muted">{payload[0].payload.orders} pedidos</p>

@@ -54,7 +54,7 @@ export function SearchableMultiSelect({
     <div ref={rootRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition-colors ${
+        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition active:scale-[0.97] ${
           selected.length > 0
             ? "border-accent/40 bg-accent-soft text-white"
             : "border-border text-text-dim hover:border-border-strong"
@@ -79,7 +79,7 @@ export function SearchableMultiSelect({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="card absolute left-0 top-[calc(100%+6px)] z-50 w-64 overflow-hidden p-2 shadow-2xl"
+            className="card absolute left-0 top-[calc(100%+6px)] z-50 w-64 overflow-hidden p-2 shadow-tinted"
           >
             <input
               ref={searchRef}
@@ -113,7 +113,7 @@ export function SearchableMultiSelect({
             {selected.length > 0 && (
               <button
                 onClick={onClear}
-                className="mt-1 w-full rounded-md px-2 py-1.5 text-left text-[12px] text-text-muted hover:text-text-dim"
+                className="mt-1 w-full rounded-md px-2 py-1.5 text-left text-[12px] text-text-muted transition hover:text-text-dim active:scale-[0.98]"
               >
                 Limpar seleção ({selected.length})
               </button>

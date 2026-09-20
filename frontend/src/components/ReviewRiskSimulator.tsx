@@ -19,7 +19,7 @@ interface Props {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="mb-1 font-mono text-text-muted">{label} dias</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.color }}>
@@ -66,7 +66,7 @@ export function ReviewRiskSimulator({ data }: Props) {
               <button
                 key={String(opt.value)}
                 onClick={() => setOnTime(opt.value)}
-                className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
+                className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition active:scale-[0.96] ${
                   onTime === opt.value
                     ? "border-accent/40 bg-accent-soft text-white"
                     : "border-border text-text-muted hover:border-border-strong hover:text-text-dim"
@@ -144,7 +144,7 @@ export function ReviewRiskSimulator({ data }: Props) {
       </ResponsiveContainer>
 
       <p className="mt-3 text-[11px] text-text-muted">
-        Regressão logística (delivery_days + on_time) — acurácia{" "}
+        Regressão logística (delivery_days + on_time), acurácia{" "}
         {(data.metrics.accuracy * 100).toFixed(1)}%, ROC-AUC {data.metrics.roc_auc.toFixed(2)}{" "}
         no conjunto de teste ({data.metrics.n_test.toLocaleString("pt-BR")} pedidos).
       </p>

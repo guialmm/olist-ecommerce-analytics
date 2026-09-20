@@ -81,7 +81,7 @@ export function LoginPage({ onSuccess }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-accent px-4 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-full bg-accent px-4 py-2 text-[14px] font-medium text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
             {loading ? "Entrando…" : "Entrar"}
           </button>

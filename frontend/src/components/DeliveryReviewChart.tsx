@@ -5,7 +5,7 @@ import type { DeliveryVsReview } from "../lib/api";
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="mb-1 font-semibold text-white">{label} estrela{label !== 1 ? "s" : ""}</p>
       {payload.map((p: any) => (
         <p key={p.dataKey} style={{ color: p.fill }}>

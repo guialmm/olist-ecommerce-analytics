@@ -28,7 +28,7 @@ export function Nav({ onLogout }: Props) {
           {onLogout && (
             <button
               onClick={onLogout}
-              className="rounded-full border border-border px-3 py-1 text-[12px] text-text-muted transition-colors hover:border-border-strong hover:text-text-dim"
+              className="rounded-full border border-border px-3 py-1 text-[12px] text-text-muted transition hover:border-border-strong hover:text-text-dim active:scale-[0.96]"
             >
               Sair
             </button>

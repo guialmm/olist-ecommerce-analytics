@@ -6,7 +6,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as CategoryRevenue;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-white">{humanize(p.category)}</p>
       <p className="text-text-muted">{formatCurrency(p.revenue)}</p>
     </div>

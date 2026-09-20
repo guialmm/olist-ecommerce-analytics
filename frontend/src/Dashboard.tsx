@@ -145,7 +145,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             </p>
             <button
               onClick={retry}
-              className="mt-5 rounded-full border border-accent/40 bg-accent-soft px-4 py-1.5 text-[13px] font-medium text-white transition-colors hover:bg-accent/20"
+              className="mt-5 rounded-full border border-accent/40 bg-accent-soft px-4 py-1.5 text-[13px] font-medium text-white transition hover:bg-accent/20 active:scale-[0.97]"
             >
               Tentar novamente
             </button>
@@ -168,7 +168,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         >
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="mt-1 text-[13px] text-text-dim">
-            Olist — e-commerce brasileiro real (2016-2018): receita, entregas, categorias e
+            Olist, e-commerce brasileiro real (2016-2018): receita, entregas, categorias e
             avaliações.
           </p>
         </motion.div>
@@ -359,7 +359,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
 
           <SectionCard
             title="Top 10 vendedores por receita"
-            subtitle="marketplace — lado da oferta"
+            subtitle="marketplace, lado da oferta"
             delay={0.35}
           >
             {initialLoading ? (
@@ -388,7 +388,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         </div>
 
         <footer className="mt-10 pb-6 text-center font-mono text-[11px] text-text-muted">
-          dados reais e anonimizados — Brazilian E-Commerce Public Dataset by Olist (Kaggle,
+          dados reais e anonimizados, Brazilian E-Commerce Public Dataset by Olist (Kaggle,
           CC BY-NC-SA 4.0)
         </footer>
       </main>

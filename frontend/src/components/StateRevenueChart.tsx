@@ -4,7 +4,7 @@ import type { StateRevenue } from "../lib/api";
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-white">{label}</p>
       <p className="text-text-muted">R$ {Math.round(payload[0].value).toLocaleString("pt-BR")}</p>
     </div>

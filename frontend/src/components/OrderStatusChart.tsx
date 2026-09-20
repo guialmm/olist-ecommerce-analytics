@@ -18,7 +18,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as OrderStatusPoint;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-white">{LABELS[p.status] ?? p.status}</p>
       <p className="text-text-muted">{p.n_orders.toLocaleString("pt-BR")} pedidos</p>
     </div>

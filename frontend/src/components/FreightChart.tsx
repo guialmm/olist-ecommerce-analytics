@@ -5,7 +5,7 @@ function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as FreightByState;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-white">{label}</p>
       <p className="text-text-muted">{p.avg_freight_pct}% do valor do item</p>
       <p className="text-text-muted">média R$ {p.avg_freight_value.toFixed(2)}</p>

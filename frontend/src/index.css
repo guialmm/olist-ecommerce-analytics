@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Self-hospedadas via @fontsource (sem depender do CDN da Google em
+   produção): só os pesos realmente usados no projeto. */
+@import "@fontsource/inter-tight/400.css";
+@import "@fontsource/inter-tight/500.css";
+@import "@fontsource/inter-tight/600.css";
+@import "@fontsource/inter-tight/700.css";
+@import "@fontsource/inter-tight/800.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/600.css";
+
 @theme {
   --color-bg: #0a1020;
   --color-bg-elev: #0f172a;
@@ -76,6 +87,15 @@ body {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
+}
+
+/* Sombra tingida pela paleta do projeto (navy + um toque do azul de
+   destaque) em vez do preto genérico do Tailwind — mesma linguagem do
+   glow usado no badge da Nav. */
+.shadow-tinted {
+  box-shadow:
+    0 20px 45px -15px rgba(2, 6, 18, 0.65),
+    0 8px 20px -8px rgba(59, 130, 246, 0.08);
 }
 
 ::-webkit-scrollbar {

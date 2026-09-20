@@ -9,7 +9,7 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as RankedSeller;
   return (
-    <div className="card-surface px-3 py-2 text-[12px] shadow-xl">
+    <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-white">{p.label}</p>
       <p className="text-text-muted font-mono">id: {p.seller_id}…</p>
       <p className="text-text-muted">R$ {Math.round(p.revenue).toLocaleString("pt-BR")}</p>
