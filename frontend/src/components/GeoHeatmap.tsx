@@ -58,7 +58,7 @@ interface Props {
 
 export function GeoHeatmap({ data }: Props) {
   return (
-    <div className="geo-heatmap h-[420px] overflow-hidden rounded-lg">
+    <div className="h-[420px] overflow-hidden rounded-lg">
       <MapContainer
         center={BRAZIL_CENTER}
         zoom={4}
@@ -71,7 +71,7 @@ export function GeoHeatmap({ data }: Props) {
         className="h-full w-full"
       >
         <TileLayer
-          url="https://server.arcgis.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
+          url="https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}"
           attribution="&copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors"
         />
         <HeatLayer points={data} />
