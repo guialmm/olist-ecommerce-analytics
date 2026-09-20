@@ -145,7 +145,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Frontend (Vitest + Testing Library — 64 testes: funções de formatação,
+Frontend (Vitest + Testing Library — 74 testes: funções de formatação,
 `lib/api.ts`, `lib/auth.ts`, componentes, o gate de autenticação e o fluxo
 completo do `Dashboard` com a API mockada):
 

@@ -148,4 +148,54 @@ describe("Dashboard", () => {
     await userEvent.click(screen.getByText("Sair"));
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
+
+  it("only shows 'limpar filtros' once a filter is active, and it resets everything", async () => {
+    render(<Dashboard onLogout={() => {}} onSessionExpired={() => {}} />);
+    await waitFor(() => expect(screen.getByText("Dashboard")).toBeInTheDocument());
+
+    expect(screen.queryByText("limpar filtros")).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("Estado"));
+    await userEvent.click(screen.getByText("SP"));
+
+    expect(await screen.findByText("limpar filtros")).toBeInTheDocument();
+    expect(screen.getByText("1/2")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("limpar filtros"));
+
+    expect(screen.queryByText("limpar filtros")).not.toBeInTheDocument();
+    expect(screen.getByText(/todos \(2\)/)).toBeInTheDocument();
+  });
+
+  it("ignores a stale response that resolves after a newer filter request", async () => {
+    const { api } = await import("./lib/api");
+    let resolveInitial!: (v: unknown) => void;
+    let resolveFiltered!: (v: unknown) => void;
+    const initialCall = new Promise((res) => {
+      resolveInitial = res;
+    });
+    const filteredCall = new Promise((res) => {
+      resolveFiltered = res;
+    });
+    vi.mocked(api.kpis).mockReturnValueOnce(initialCall as never);
+    vi.mocked(api.kpis).mockReturnValueOnce(filteredCall as never);
+
+    render(<Dashboard onLogout={() => {}} onSessionExpired={() => {}} />);
+    await waitFor(() => expect(screen.getByText("Dashboard")).toBeInTheDocument());
+
+    // troca de filtro dispara a segunda chamada a api.kpis antes da primeira
+    // (o carregamento inicial, sem filtro) ter respondido.
+    await userEvent.click(screen.getByText("Estado"));
+    await userEvent.click(screen.getByText("SP"));
+
+    // a chamada mais recente (filtrada) responde primeiro...
+    resolveFiltered({ revenue: 999, orders: 1, avg_order_value: 999, pct_on_time: 50 });
+    await waitFor(() => expect(screen.getByText(/R\$ 999/)).toBeInTheDocument(), { timeout: 3000 });
+
+    // ...e a mais antiga (sem filtro) chega atrasada. Não pode sobrescrever a tela.
+    resolveInitial({ revenue: 111, orders: 2, avg_order_value: 111, pct_on_time: 10 });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(screen.queryByText(/R\$ 111/)).not.toBeInTheDocument();
+    expect(screen.getByText(/R\$ 999/)).toBeInTheDocument();
+  });
 });

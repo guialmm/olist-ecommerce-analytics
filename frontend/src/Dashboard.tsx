@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Background } from "./components/Background";
+import { CopyLinkButton } from "./components/CopyLinkButton";
 import { DateRangePicker } from "./components/DateRangePicker";
 import { DeliveryReviewChart } from "./components/DeliveryReviewChart";
 import { EmptyState } from "./components/EmptyState";
@@ -34,6 +35,7 @@ import {
   type StateRevenue,
   type TopSeller,
 } from "./lib/api";
+import { readFiltersFromUrl, writeFiltersToUrl } from "./lib/urlFilters";
 
 function errorMessage(err: unknown): string {
   if (err instanceof ApiError) return err.message;
@@ -47,10 +49,10 @@ interface Props {
 
 export default function Dashboard({ onLogout, onSessionExpired }: Props) {
   const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [states, setStates] = useState<string[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [startDate, setStartDate] = useState<string | null>(null);
-  const [endDate, setEndDate] = useState<string | null>(null);
+  const [states, setStates] = useState<string[]>(() => readFiltersFromUrl().states);
+  const [categories, setCategories] = useState<string[]>(() => readFiltersFromUrl().categories);
+  const [startDate, setStartDate] = useState<string | null>(() => readFiltersFromUrl().startDate);
+  const [endDate, setEndDate] = useState<string | null>(() => readFiltersFromUrl().endDate);
 
   const [kpis, setKpis] = useState<Kpis | null>(null);
   const [revenue, setRevenue] = useState<RevenuePoint[]>([]);
@@ -85,8 +87,15 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
 
   useEffect(loadFilterOptions, [loadFilterOptions, retryTick]);
 
+  const latestRequestId = useRef(0);
+
   useEffect(() => {
     if (!filterOptions) return;
+    // Troca rápida de filtro pode fazer duas requisições ficarem em voo ao
+    // mesmo tempo; sem essa checagem, a resposta mais lenta (não a mais
+    // recente) podia chegar por último e sobrescrever a tela com dado de
+    // um filtro que não é mais o selecionado.
+    const requestId = ++latestRequestId.current;
     const f = { states, categories, startDate, endDate };
     Promise.all([
       api.kpis(f),
@@ -102,6 +111,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
       api.reviewRiskModel(),
     ])
       .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts, geo, risk]) => {
+        if (requestId !== latestRequestId.current) return;
         setKpis(k);
         setRevenue(rev);
         setOrderStatus(os);
@@ -116,9 +126,16 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         setError(null);
         setInitialLoading(false);
       })
-      .catch(handleFailure);
+      .catch((err) => {
+        if (requestId !== latestRequestId.current) return;
+        handleFailure(err);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterOptions, states, categories, startDate, endDate]);
+
+  useEffect(() => {
+    writeFiltersToUrl({ states, categories, startDate, endDate });
+  }, [states, categories, startDate, endDate]);
 
   const retry = () => setRetryTick((n) => n + 1);
 
@@ -128,6 +145,13 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   const clearStates = () => setStates([]);
   const clearCategories = () => setCategories([]);
+  const hasActiveFilters = states.length > 0 || categories.length > 0 || !!startDate || !!endDate;
+  const clearAllFilters = () => {
+    setStates([]);
+    setCategories([]);
+    setStartDate(null);
+    setEndDate(null);
+  };
 
   if (error) {
     return (
@@ -187,15 +211,28 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
                 }}
               />
             </div>
-            <FilterBar
-              options={filterOptions}
-              selectedStates={states}
-              selectedCategories={categories}
-              onToggleState={toggleState}
-              onToggleCategory={toggleCategory}
-              onClearStates={clearStates}
-              onClearCategories={clearCategories}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <FilterBar
+                options={filterOptions}
+                selectedStates={states}
+                selectedCategories={categories}
+                onToggleState={toggleState}
+                onToggleCategory={toggleCategory}
+                onClearStates={clearStates}
+                onClearCategories={clearCategories}
+              />
+              <div className="flex items-center gap-2">
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="border border-border px-3 py-1.5 font-mono text-[12px] text-text-muted transition hover:border-border-strong hover:text-text-dim active:scale-[0.97]"
+                  >
+                    limpar filtros
+                  </button>
+                )}
+                <CopyLinkButton />
+              </div>
+            </div>
           </div>
         )}
 
