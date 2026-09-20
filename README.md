@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml)
 
+**[Demo ao vivo](#deploy)** — login: `demo` / `olist2018` (backend grátis pode
+levar ~30s pra acordar na primeira visita, ver [Deploy](#deploy))
+
 Projeto de portfólio/estudo: dados **reais** e anonimizados de e-commerce
 brasileiro (o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
 ~100 mil pedidos entre 2016 e 2018), carregados num banco relacional próprio
@@ -112,6 +115,57 @@ npm install
 npm run dev
 # abre em http://localhost:5173 (API em http://localhost:8000)
 ```
+
+## Deploy
+
+Demo pública: **[link aqui depois de publicado]**
+
+Três serviços, todos com camada gratuita permanente:
+
+| Camada | Serviço | Por quê |
+|---|---|---|
+| Frontend (estático) | [Vercel](https://vercel.com) | grátis pra sempre, sem cold start |
+| Backend (API) | [Render](https://render.com) | grátis pra sempre, mas **dorme após ~15min sem uso** (primeira visita depois disso demora uns 30-50s pra acordar, depois fica normal) |
+| Banco (MySQL) | [Aiven](https://aiven.io) | dos poucos com MySQL gratuito permanente e sem cartão de crédito |
+
+Passo a passo:
+
+### 1. Banco — Aiven MySQL
+
+1. Crie uma conta em [aiven.io](https://aiven.io) (sem cartão) e um serviço **MySQL** no plano **Free**.
+2. Na página do serviço, pegue em "Connection information": `Host`, `Port`, `User`, `Password`, `Database name` (normalmente `defaultdb`), e baixe o certificado **CA Certificate** (`ca.pem`).
+3. Aplique o schema e carregue os dados a partir da sua máquina (com o dataset já em `data/raw/`, ver [data/README.md](data/README.md)):
+   ```bash
+   mysql -h<host> -P<port> -u<user> -p --ssl-ca=<caminho/ca.pem> <database> < sql/schema.sql
+   mysql -h<host> -P<port> -u<user> -p --ssl-ca=<caminho/ca.pem> <database> < sql/views.sql
+
+   MYSQL_HOST=<host> MYSQL_PORT=<port> MYSQL_USER=<user> MYSQL_PASSWORD=<senha> \
+   MYSQL_DATABASE=<database> MYSQL_SSL_CA=<caminho/ca.pem> \
+   python etl/load_to_mysql.py
+   ```
+
+### 2. Backend — Render
+
+1. Crie uma conta em [render.com](https://render.com) e conecte o GitHub.
+2. **New > Blueprint**, aponte pro repositório — o [render.yaml](render.yaml) já define o serviço (Docker, plano free, health check em `/api/health`).
+3. Preenche as variáveis de ambiente marcadas como manuais: `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE` (dados da Aiven) e `DEMO_PASSWORD`. `JWT_SECRET_KEY` é gerado automaticamente.
+4. Pro certificado TLS da Aiven: em **Environment > Secret Files**, adicione um arquivo (ex: caminho `/etc/secrets/aiven-ca.pem`) colando o conteúdo do `ca.pem`; defina `MYSQL_SSL_CA=/etc/secrets/aiven-ca.pem` na variável de ambiente.
+5. Deixe `CORS_ORIGINS` em branco por enquanto — volta nesse passo depois do frontend estar no ar (passo 3.3).
+6. Guarda a URL que o Render gerou (`https://olist-analytics-api.onrender.com` ou parecido).
+
+### 3. Frontend — Vercel
+
+1. Crie uma conta em [vercel.com](https://vercel.com), **Add New > Project**, importe o repositório.
+2. Em **Root Directory**, aponte pra `frontend` (o projeto é um monorepo).
+3. Em **Environment Variables**, adicione `VITE_API_URL` com a URL do backend do Render (passo 2.6).
+4. Deploy. Guarda a URL que a Vercel gerou.
+5. Volta no Render e preenche `CORS_ORIGINS` com essa URL da Vercel — sem isso o navegador bloqueia as chamadas à API por CORS.
+
+### Custo e limitações
+
+- Tudo isso é R$ 0/mês nos três serviços, sem cartão de crédito.
+- O backend no Render dorme após ~15min sem tráfego — a primeira requisição depois disso demora pra acordar. Pra portfólio isso é um trade-off aceitável; pra manter sempre ligado, o plano pago do Render (~US$7/mês) ou Railway resolvem.
+- O modelo de risco de avaliação (`backend/review_risk_model.json`) já vem versionado no repo — não precisa rodar `ml/train_review_risk_model.py` em produção.
 
 ## CI
 

@@ -1,0 +1,33 @@
+# Blueprint do Render — cria o backend com um clique (New > Blueprint,
+# aponta pro repositório). As variáveis com `sync: false` precisam ser
+# preenchidas manualmente no painel do Render depois (valores da Aiven
+# MySQL, por exemplo). Ver README > Deploy pro passo a passo completo.
+services:
+  - type: web
+    name: olist-analytics-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        sync: false
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        sync: false
+      - key: MYSQL_SSL_CA
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: DEMO_USERNAME
+        value: demo
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

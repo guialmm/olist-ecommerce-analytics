@@ -27,6 +27,11 @@ DB_HOST = os.getenv("MYSQL_HOST", "127.0.0.1")
 DB_PORT = os.getenv("MYSQL_PORT", "3307")
 DB_NAME = os.getenv("MYSQL_DATABASE", "olist_analytics")
 
+# Pra rodar contra um MySQL gerenciado em produção (ex: Aiven, que exige
+# TLS): MYSQL_SSL_CA=caminho/pro/ca.pem antes de chamar este script.
+_ssl_ca = os.getenv("MYSQL_SSL_CA")
+CONNECT_ARGS = {"ssl": {"ca": _ssl_ca}} if _ssl_ca else {}
+
 ENGINE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
@@ -191,7 +196,7 @@ def load_reviews(valid_orders: set[str]) -> pd.DataFrame:
 
 
 def main():
-    engine = create_engine(ENGINE_URL)
+    engine = create_engine(ENGINE_URL, connect_args=CONNECT_ARGS)
 
     categories = load_categories()
     customers = load_customers()

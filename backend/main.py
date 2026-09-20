@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,9 +17,15 @@ logger = logging.getLogger("olist_api")
 
 app = FastAPI(title="Olist E-Commerce Analytics API")
 
+# Em produção, CORS_ORIGINS define a(s) origem(ns) do frontend hospedado
+# (ex: https://olist-analytics.vercel.app) — separadas por vírgula se houver
+# mais de uma. Em dev, cai no default local.
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+allowed_origins = [o.strip() for o in os.getenv("CORS_ORIGINS", _default_origins).split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
