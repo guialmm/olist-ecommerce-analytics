@@ -65,3 +65,9 @@ FROM (
     FROM order_items
     GROUP BY order_id
 ) t;
+
+-- 11) Densidade geográfica de pedidos (top 10 prefixos de CEP por receita)
+SELECT zip_code_prefix, city, state, revenue, orders
+FROM v_geo_density
+ORDER BY revenue DESC
+LIMIT 10;

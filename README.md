@@ -179,6 +179,7 @@ para entrevistas (casing):
 8. Distribuição de método de pagamento
 9. Distribuição de notas de avaliação
 10. Ticket médio por pedido
+11. Densidade geográfica de pedidos (top 10 prefixos de CEP por receita)
 
 ## Licença dos dados
 
