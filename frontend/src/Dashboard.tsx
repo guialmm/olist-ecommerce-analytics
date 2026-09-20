@@ -35,6 +35,7 @@ import {
   type StateRevenue,
   type TopSeller,
 } from "./lib/api";
+import { downloadCsv } from "./lib/csv";
 import { readFiltersFromUrl, writeFiltersToUrl } from "./lib/urlFilters";
 
 function errorMessage(err: unknown): string {
@@ -152,6 +153,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
     setStartDate(null);
     setEndDate(null);
   };
+
+  const exportCsv = <T extends object>(rows: T[], slug: string) =>
+    downloadCsv(rows, `olist-${slug}-${new Date().toISOString().slice(0, 10)}`);
 
   if (error) {
     return (
@@ -296,6 +300,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
           <SectionCard
             title="Mapa de calor de pedidos"
             subtitle="densidade geográfica por CEP do cliente"
+            onExportCsv={
+              geoDensity.length > 0 ? () => exportCsv(geoDensity, "mapa-de-calor") : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton height={420} />
@@ -308,7 +315,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <SectionCard title="Receita mensal (GMV)" subtitle="valor dos itens vendidos">
+          <SectionCard
+            title="Receita mensal (GMV)"
+            subtitle="valor dos itens vendidos"
+            onExportCsv={revenue.length > 0 ? () => exportCsv(revenue, "receita-mensal") : undefined}
+          >
             {initialLoading ? (
               <ChartSkeleton height={280} />
             ) : revenue.length === 0 ? (
@@ -318,7 +329,14 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             )}
           </SectionCard>
 
-          <SectionCard title="Status dos pedidos" subtitle="volume por status" delay={0.05}>
+          <SectionCard
+            title="Status dos pedidos"
+            subtitle="volume por status"
+            delay={0.05}
+            onExportCsv={
+              orderStatus.length > 0 ? () => exportCsv(orderStatus, "status-pedidos") : undefined
+            }
+          >
             {initialLoading ? (
               <ChartSkeleton />
             ) : orderStatus.length === 0 ? (
@@ -332,6 +350,19 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             title="Entrega no prazo × nota da avaliação"
             subtitle="distribuição de notas (1-5 estrelas)"
             delay={0.1}
+            onExportCsv={
+              deliveryVsReview &&
+              (deliveryVsReview.on_time.length > 0 || deliveryVsReview.late.length > 0)
+                ? () =>
+                    exportCsv(
+                      [
+                        ...deliveryVsReview.on_time.map((b) => ({ situacao: "no_prazo", ...b })),
+                        ...deliveryVsReview.late.map((b) => ({ situacao: "atrasado", ...b })),
+                      ],
+                      "entrega-x-avaliacao",
+                    )
+                : undefined
+            }
           >
             {initialLoading || !deliveryVsReview ? (
               <ChartSkeleton />
@@ -346,6 +377,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             title="Top 10 categorias por receita"
             subtitle="valor total vendido"
             delay={0.15}
+            onExportCsv={
+              topCategories.length > 0 ? () => exportCsv(topCategories, "top-categorias") : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton height={300} />
@@ -360,7 +394,16 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             )}
           </SectionCard>
 
-          <SectionCard title="Receita por estado" subtitle="top estados do cliente" delay={0.2}>
+          <SectionCard
+            title="Receita por estado"
+            subtitle="top estados do cliente"
+            delay={0.2}
+            onExportCsv={
+              revenueByState.length > 0
+                ? () => exportCsv(revenueByState, "receita-por-estado")
+                : undefined
+            }
+          >
             {initialLoading ? (
               <ChartSkeleton />
             ) : revenueByState.length === 0 ? (
@@ -378,6 +421,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             title="Métodos de pagamento"
             subtitle="participação no valor total"
             delay={0.25}
+            onExportCsv={
+              paymentMethods.length > 0
+                ? () => exportCsv(paymentMethods, "metodos-pagamento")
+                : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton />
@@ -392,6 +440,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             title="Frete por estado do cliente"
             subtitle="% do valor do item, estados mais caros primeiro"
             delay={0.3}
+            onExportCsv={
+              freightByState.length > 0
+                ? () => exportCsv(freightByState, "frete-por-estado")
+                : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton />
@@ -410,6 +463,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             title="Top 10 vendedores por receita"
             subtitle="marketplace, lado da oferta"
             delay={0.35}
+            onExportCsv={
+              topSellers.length > 0 ? () => exportCsv(topSellers, "top-vendedores") : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton height={300} />
@@ -425,6 +481,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
           <SectionCard
             title="Risco de avaliação negativa"
             subtitle="simulação com o modelo (regressão logística)"
+            onExportCsv={
+              reviewRisk ? () => exportCsv(reviewRisk.curve, "risco-avaliacao-negativa") : undefined
+            }
           >
             {initialLoading ? (
               <ChartSkeleton height={340} />
