@@ -47,7 +47,7 @@ export function ReviewRiskSimulator({ data }: Props) {
         <div className="flex flex-1 flex-col gap-3">
           <div className="flex items-center justify-between text-[12.5px]">
             <span className="text-text-dim">
-              Tempo de entrega: <span className="font-mono text-white">{deliveryDays} dias</span>
+              Tempo de entrega: <span className="font-mono text-text">{deliveryDays} dias</span>
             </span>
           </div>
           <input
@@ -68,7 +68,7 @@ export function ReviewRiskSimulator({ data }: Props) {
                 onClick={() => setOnTime(opt.value)}
                 className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition active:scale-[0.96] ${
                   onTime === opt.value
-                    ? "border-accent/40 bg-accent-soft text-white"
+                    ? "border-accent/40 bg-accent-soft text-accent"
                     : "border-border text-text-muted hover:border-border-strong hover:text-text-dim"
                 }`}
               >
@@ -103,14 +103,14 @@ export function ReviewRiskSimulator({ data }: Props) {
           <XAxis
             dataKey="delivery_days"
             stroke="rgba(255,255,255,0.08)"
-            tick={{ fill: "#64748B", fontSize: 11 }}
+            tick={{ fill: "#6b6a62", fontSize: 11 }}
             tickLine={false}
-            label={{ value: "dias de entrega", position: "insideBottom", offset: -4, fill: "#64748B", fontSize: 11 }}
+            label={{ value: "dias de entrega", position: "insideBottom", offset: -4, fill: "#6b6a62", fontSize: 11 }}
           />
           <YAxis
             tickFormatter={(v) => `${Math.round(v * 100)}%`}
             stroke="rgba(255,255,255,0.08)"
-            tick={{ fill: "#64748B", fontSize: 11 }}
+            tick={{ fill: "#6b6a62", fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={40}
@@ -137,7 +137,7 @@ export function ReviewRiskSimulator({ data }: Props) {
             y={risk}
             r={5}
             fill={onTime ? "#34d399" : "#f87171"}
-            stroke="#0A1020"
+            stroke="#0a0a09"
             strokeWidth={2}
           />
         </LineChart>

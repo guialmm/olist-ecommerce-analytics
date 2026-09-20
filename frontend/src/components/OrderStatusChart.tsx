@@ -19,7 +19,7 @@ function CustomTooltip({ active, payload }: any) {
   const p = payload[0].payload as OrderStatusPoint;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
-      <p className="font-semibold text-white">{LABELS[p.status] ?? p.status}</p>
+      <p className="font-semibold text-text">{LABELS[p.status] ?? p.status}</p>
       <p className="text-text-muted">{p.n_orders.toLocaleString("pt-BR")} pedidos</p>
     </div>
   );
@@ -33,7 +33,7 @@ export function OrderStatusChart({ data }: { data: OrderStatusPoint[] }) {
         <XAxis
           type="number"
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#64748B", fontSize: 11 }}
+          tick={{ fill: "#6b6a62", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
@@ -42,14 +42,14 @@ export function OrderStatusChart({ data }: { data: OrderStatusPoint[] }) {
           dataKey="status"
           tickFormatter={(s) => LABELS[s] ?? s}
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#94A3B8", fontSize: 12 }}
+          tick={{ fill: "#a3a29a", fontSize: 12 }}
           tickLine={false}
           width={90}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-        <Bar dataKey="n_orders" radius={[0, 4, 4, 0]} animationDuration={900} animationEasing="ease-out">
+        <Bar dataKey="n_orders" radius={[0, 0, 0, 0]} animationDuration={900} animationEasing="ease-out">
           {data.map((d) => (
-            <Cell key={d.status} fill={PROBLEM_STATUSES.has(d.status) ? "#f87171" : "#3B82F6"} fillOpacity={0.8} />
+            <Cell key={d.status} fill={PROBLEM_STATUSES.has(d.status) ? "#f87171" : "#f0a020"} fillOpacity={0.8} />
           ))}
         </Bar>
       </BarChart>

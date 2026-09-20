@@ -6,7 +6,7 @@ function CustomTooltip({ active, payload, label }: any) {
   const p = payload[0].payload as FreightByState;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
-      <p className="font-semibold text-white">{label}</p>
+      <p className="font-semibold text-text">{label}</p>
       <p className="text-text-muted">{p.avg_freight_pct}% do valor do item</p>
       <p className="text-text-muted">média R$ {p.avg_freight_value.toFixed(2)}</p>
     </div>
@@ -21,13 +21,13 @@ export function FreightChart({ data }: { data: FreightByState[] }) {
         <XAxis
           dataKey="state"
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#94A3B8", fontSize: 11 }}
+          tick={{ fill: "#a3a29a", fontSize: 11 }}
           tickLine={false}
         />
         <YAxis
           tickFormatter={(v) => `${v}%`}
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#64748B", fontSize: 11 }}
+          tick={{ fill: "#6b6a62", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
           width={36}
@@ -37,7 +37,7 @@ export function FreightChart({ data }: { data: FreightByState[] }) {
           dataKey="avg_freight_pct"
           fill="#f59e0b"
           fillOpacity={0.8}
-          radius={[4, 4, 0, 0]}
+          radius={[0, 0, 0, 0]}
           animationDuration={1000}
           animationEasing="ease-out"
         />

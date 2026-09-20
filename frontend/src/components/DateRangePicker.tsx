@@ -24,7 +24,7 @@ function PresetButton({
       whileTap={{ scale: 0.94 }}
       className={`rounded-full border px-3 py-1 text-[12.5px] font-medium transition-colors ${
         active
-          ? "border-accent/40 bg-accent-soft text-white"
+          ? "border-accent/40 bg-accent-soft text-accent"
           : "border-border text-text-muted hover:border-border-strong hover:text-text-dim"
       }`}
     >
@@ -69,7 +69,7 @@ export function DateRangePicker({ minDate, maxDate, startDate, endDate, onChange
           min={minDate}
           max={endDate ?? maxDate}
           onChange={(e) => onChange(e.target.value, endDate)}
-          className="rounded-lg border border-border bg-transparent px-2 py-1 text-[12px] text-text-dim [color-scheme:dark]"
+          className="border border-border bg-transparent px-2 py-1 font-mono text-[12px] text-text-dim [color-scheme:dark]"
         />
         <span className="text-text-muted">→</span>
         <input
@@ -78,7 +78,7 @@ export function DateRangePicker({ minDate, maxDate, startDate, endDate, onChange
           min={startDate ?? minDate}
           max={maxDate}
           onChange={(e) => onChange(startDate, e.target.value)}
-          className="rounded-lg border border-border bg-transparent px-2 py-1 text-[12px] text-text-dim [color-scheme:dark]"
+          className="border border-border bg-transparent px-2 py-1 font-mono text-[12px] text-text-dim [color-scheme:dark]"
         />
       </div>
     </div>

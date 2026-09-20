@@ -31,10 +31,9 @@ export function KpiCard({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.55, delay, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ y: -3 }}
-      className="card-surface relative overflow-hidden px-5 py-4"
+      className="card-surface relative border-t-2 border-t-accent/50 px-5 py-4"
     >
-      <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-accent-soft blur-2xl" />
-      <p className="text-[12px] font-medium text-text-muted">{label}</p>
+      <p className="font-mono text-[11px] uppercase tracking-[0.08em] text-text-muted">{label}</p>
       <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight">
         {format(animated)}
       </p>

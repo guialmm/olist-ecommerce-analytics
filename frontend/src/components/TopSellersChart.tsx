@@ -10,7 +10,7 @@ function CustomTooltip({ active, payload }: any) {
   const p = payload[0].payload as RankedSeller;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
-      <p className="font-semibold text-white">{p.label}</p>
+      <p className="font-semibold text-text">{p.label}</p>
       <p className="text-text-muted font-mono">id: {p.seller_id}…</p>
       <p className="text-text-muted">R$ {Math.round(p.revenue).toLocaleString("pt-BR")}</p>
       <p className="text-text-muted">{p.orders} pedidos</p>
@@ -31,7 +31,7 @@ export function TopSellersChart({ data }: { data: TopSeller[] }) {
           type="number"
           tickFormatter={(v) => `${Math.round(v / 1000)}k`}
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#64748B", fontSize: 11 }}
+          tick={{ fill: "#6b6a62", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
         />
@@ -39,16 +39,16 @@ export function TopSellersChart({ data }: { data: TopSeller[] }) {
           type="category"
           dataKey="label"
           stroke="rgba(255,255,255,0.08)"
-          tick={{ fill: "#94A3B8", fontSize: 12 }}
+          tick={{ fill: "#a3a29a", fontSize: 12 }}
           tickLine={false}
           width={64}
         />
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
         <Bar
           dataKey="revenue"
-          fill="#3B82F6"
+          fill="#f0a020"
           fillOpacity={0.8}
-          radius={[0, 4, 4, 0]}
+          radius={[0, 0, 0, 0]}
           animationDuration={1000}
           animationEasing="ease-out"
         />

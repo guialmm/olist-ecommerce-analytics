@@ -9,14 +9,14 @@ const LABELS: Record<string, string> = {
   not_defined: "Não definido",
 };
 
-const COLORS = ["#3B82F6", "#60A5FA", "#93C5FD", "#1D4ED8", "#64748B"];
+const COLORS = ["#f0a020", "#f4b84d", "#c9791a", "#8a5211", "#6b6a62"];
 
 function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload as PaymentMethod;
   return (
     <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
-      <p className="font-semibold text-white">{LABELS[p.payment_type] ?? p.payment_type}</p>
+      <p className="font-semibold text-text">{LABELS[p.payment_type] ?? p.payment_type}</p>
       <p className="text-text-muted">R$ {Math.round(p.total_value).toLocaleString("pt-BR")}</p>
       <p className="text-text-muted">{p.n_orders.toLocaleString("pt-BR")} pedidos</p>
     </div>
@@ -44,7 +44,7 @@ export function PaymentMethodsChart({ data }: { data: PaymentMethod[] }) {
         <Tooltip content={<CustomTooltip />} />
         <Legend
           formatter={(value: string) => LABELS[value] ?? value}
-          wrapperStyle={{ fontSize: 12, color: "#94A3B8" }}
+          wrapperStyle={{ fontSize: 12, color: "#a3a29a" }}
           iconType="circle"
           iconSize={8}
         />

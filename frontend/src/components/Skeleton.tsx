@@ -1,5 +1,5 @@
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-lg bg-surface ${className}`} />;
+  return <div className={`animate-pulse bg-surface ${className}`} />;
 }
 
 export function KpiCardSkeleton() {
@@ -14,6 +14,6 @@ export function KpiCardSkeleton() {
 
 export function ChartSkeleton({ height = 260 }: { height?: number }) {
   return (
-    <div className="animate-pulse rounded-lg bg-surface" style={{ width: "100%", height }} />
+    <div className="animate-pulse bg-surface" style={{ width: "100%", height }} />
   );
 }

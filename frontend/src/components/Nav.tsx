@@ -13,16 +13,19 @@ export function Nav({ onLogout }: Props) {
       className="glass-nav sticky top-0 z-50"
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-6">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-accent font-mono text-[11px] font-bold text-white shadow-[0_6px_20px_var(--color-accent-glow)]">
+        <div className="grid h-8 w-8 place-items-center border border-accent/40 bg-accent-soft font-mono text-[11px] font-bold text-accent">
           OE
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold tracking-tight">Olist Analytics</span>
+          <span className="font-mono text-[15px] font-semibold tracking-tight">Olist Analytics</span>
           <span className="text-[13px] text-text-muted">receita · entregas · avaliações</span>
         </div>
         <div className="ml-auto flex items-center gap-4">
           <div className="flex items-center gap-2 font-mono text-[11px] text-text-muted">
-            <span className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-up opacity-75 motion-reduce:hidden" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_8px_var(--color-up)]" />
+            </span>
             dados reais · live query
           </div>
           {onLogout && (

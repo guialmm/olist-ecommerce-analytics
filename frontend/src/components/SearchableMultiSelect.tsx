@@ -54,9 +54,9 @@ export function SearchableMultiSelect({
     <div ref={rootRef} className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[13px] font-medium transition active:scale-[0.97] ${
+        className={`flex items-center gap-2 border px-3 py-1.5 text-[13px] font-medium transition active:scale-[0.97] ${
           selected.length > 0
-            ? "border-accent/40 bg-accent-soft text-white"
+            ? "border-accent/40 bg-accent-soft text-accent"
             : "border-border text-text-dim hover:border-border-strong"
         }`}
       >
@@ -86,7 +86,7 @@ export function SearchableMultiSelect({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Buscar ${label.toLowerCase()}…`}
-              className="mb-2 w-full rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent/50"
+              className="mb-2 w-full border border-border bg-surface px-2.5 py-1.5 text-[13px] outline-none focus:border-accent/50"
             />
             <div className="max-h-56 overflow-y-auto">
               {filtered.length === 0 && (
@@ -97,7 +97,7 @@ export function SearchableMultiSelect({
                 return (
                   <label
                     key={option}
-                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-[13px] text-text-dim hover:bg-surface-hover"
+                    className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-[13px] text-text-dim hover:bg-surface-hover"
                   >
                     <input
                       type="checkbox"
@@ -113,7 +113,7 @@ export function SearchableMultiSelect({
             {selected.length > 0 && (
               <button
                 onClick={onClear}
-                className="mt-1 w-full rounded-md px-2 py-1.5 text-left text-[12px] text-text-muted transition hover:text-text-dim active:scale-[0.98]"
+                className="mt-1 w-full px-2 py-1.5 text-left font-mono text-[12px] text-text-muted transition hover:text-text-dim active:scale-[0.98]"
               >
                 Limpar seleção ({selected.length})
               </button>

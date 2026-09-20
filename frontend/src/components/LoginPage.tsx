@@ -39,7 +39,7 @@ export function LoginPage({ onSuccess }: Props) {
           className="card w-full max-w-sm p-7"
         >
           <div className="mb-6 flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-accent font-mono text-[12px] font-bold text-white shadow-[0_6px_20px_var(--color-accent-glow)]">
+            <div className="grid h-9 w-9 place-items-center border border-accent/40 bg-accent-soft font-mono text-[12px] font-bold text-accent">
               OE
             </div>
             <div>
@@ -56,7 +56,7 @@ export function LoginPage({ onSuccess }: Props) {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
-            className="mb-4 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent/50"
+            className="mb-4 w-full border border-border bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent/50"
           />
 
           <label className="mb-1 block text-[12px] font-medium text-text-dim" htmlFor="password">
@@ -68,7 +68,7 @@ export function LoginPage({ onSuccess }: Props) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
-            className="mb-2 w-full rounded-lg border border-border bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent/50"
+            className="mb-2 w-full border border-border bg-surface px-3 py-2 text-[14px] outline-none transition-colors focus:border-accent/50"
           />
 
           <p className="mb-4 text-[11px] text-text-muted">
@@ -81,7 +81,7 @@ export function LoginPage({ onSuccess }: Props) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-full bg-accent px-4 py-2 text-[14px] font-medium text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
+            className="w-full rounded-full bg-accent px-4 py-2 text-[14px] font-semibold text-[#0a0a09] transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
             {loading ? "Entrando…" : "Entrar"}
           </button>

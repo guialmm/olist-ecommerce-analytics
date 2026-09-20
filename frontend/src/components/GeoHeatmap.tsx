@@ -39,7 +39,7 @@ function HeatLayer({ points }: HeatLayerProps) {
         blur: 18,
         max: 1,
         minOpacity: 0.35,
-        gradient: { 0.2: "#1d4ed8", 0.4: "#3b82f6", 0.65: "#22d3ee", 0.85: "#facc15", 1: "#f97316" },
+        gradient: { 0.2: "#4a2408", 0.4: "#c9791a", 0.65: "#f0a020", 0.85: "#fbbf24", 1: "#fef3c7" },
       }).addTo(map);
     });
 
@@ -58,7 +58,7 @@ interface Props {
 
 export function GeoHeatmap({ data }: Props) {
   return (
-    <div className="h-[420px] overflow-hidden rounded-lg">
+    <div className="h-[420px] overflow-hidden">
       <MapContainer
         center={BRAZIL_CENTER}
         zoom={4}

@@ -20,7 +20,11 @@ export function SectionCard({ title, subtitle, children, delay = 0, className = 
     >
       <div className="mb-5 flex items-baseline justify-between">
         <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
-        {subtitle && <span className="text-[12px] text-text-muted">{subtitle}</span>}
+        {subtitle && (
+          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-text-muted">
+            {subtitle}
+          </span>
+        )}
       </div>
       {children}
     </motion.section>

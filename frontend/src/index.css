@@ -12,23 +12,26 @@
 @import "@fontsource/jetbrains-mono/600.css";
 
 @theme {
-  --color-bg: #0a1020;
-  --color-bg-elev: #0f172a;
-  --color-bg-elev-2: #131c30;
-  --color-accent: #3b82f6;
-  --color-accent-soft: rgba(59, 130, 246, 0.12);
-  --color-accent-glow: rgba(59, 130, 246, 0.35);
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-surface: rgba(255, 255, 255, 0.04);
-  --color-surface-hover: rgba(255, 255, 255, 0.07);
-  --color-text: #f1f5f9;
-  --color-text-dim: #94a3b8;
-  --color-text-muted: #64748b;
-  --color-up: #34d399;
+  /* Paleta "terminal de dados": preto neutro (não navy-azulado) + âmbar
+     como único destaque, no lugar do azul padrão de IA generativa. */
+  --color-bg: #0a0a09;
+  --color-bg-elev: #121210;
+  --color-bg-elev-2: #1a1a17;
+  --color-accent: #f0a020;
+  --color-accent-soft: rgba(240, 160, 32, 0.12);
+  --color-accent-glow: rgba(240, 160, 32, 0.35);
+  --color-border: rgba(250, 248, 240, 0.08);
+  --color-border-strong: rgba(250, 248, 240, 0.16);
+  --color-surface: rgba(250, 248, 240, 0.035);
+  --color-surface-hover: rgba(250, 248, 240, 0.06);
+  --color-text: #f5f4ef;
+  --color-text-dim: #a3a29a;
+  --color-text-muted: #6b6a62;
+  --color-up: #4ade80;
   --color-down: #f87171;
   --font-sans: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --radius-panel: 2px;
 }
 
 html,
@@ -56,46 +59,61 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 15% 0%, var(--color-accent-soft), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 10%, rgba(59, 130, 246, 0.16), transparent 60%);
-  opacity: 0.9;
+  background: radial-gradient(ellipse 45% 35% at 85% -5%, var(--color-accent-soft), transparent 65%);
+  opacity: 0.7;
 }
 .bg-decor::after {
   content: "";
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence baseFrequency='0.9' numOctaves='2' seed='5'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.6 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  opacity: 0.04;
+  opacity: 0.05;
   mix-blend-mode: overlay;
 }
 
 .glass-nav {
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
 }
 
 .card {
   background: var(--color-bg-elev);
   border: 1px solid var(--color-border);
-  border-radius: 18px;
+  border-radius: var(--radius-panel);
 }
 
 .card-surface {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: var(--radius-panel);
 }
 
-/* Sombra tingida pela paleta do projeto (navy + um toque do azul de
-   destaque) em vez do preto genérico do Tailwind — mesma linguagem do
-   glow usado no badge da Nav. */
+/* Sombra tingida pela paleta do projeto (preto + um toque do âmbar de
+   destaque) em vez do preto genérico do Tailwind. */
 .shadow-tinted {
   box-shadow:
-    0 20px 45px -15px rgba(2, 6, 18, 0.65),
-    0 8px 20px -8px rgba(59, 130, 246, 0.08);
+    0 20px 45px -15px rgba(0, 0, 0, 0.7),
+    0 8px 20px -8px rgba(240, 160, 32, 0.08);
+}
+
+/* Controles de zoom do Leaflet: por padrão vêm em branco/preto genérico
+   da lib, destoando do tema. Realinha com a paleta do terminal. */
+.leaflet-control-zoom a {
+  background: var(--color-bg-elev) !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-accent) !important;
+  border-radius: 0 !important;
+}
+.leaflet-control-zoom a:hover {
+  background: var(--color-bg-elev-2) !important;
+}
+.leaflet-control-attribution {
+  background: var(--color-bg-elev) !important;
+  color: var(--color-text-muted) !important;
+  border: 1px solid var(--color-border);
+}
+.leaflet-control-attribution a {
+  color: var(--color-accent) !important;
 }
 
 ::-webkit-scrollbar {
