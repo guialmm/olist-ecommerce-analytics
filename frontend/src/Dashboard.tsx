@@ -352,7 +352,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             ) : topCategories.length === 0 ? (
               <EmptyState height={300} />
             ) : (
-              <TopCategoriesChart data={topCategories} />
+              <TopCategoriesChart
+                data={topCategories}
+                selectedCategories={categories}
+                onSelectCategory={toggleCategory}
+              />
             )}
           </SectionCard>
 
@@ -362,7 +366,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             ) : revenueByState.length === 0 ? (
               <EmptyState />
             ) : (
-              <StateRevenueChart data={revenueByState} />
+              <StateRevenueChart
+                data={revenueByState}
+                selectedStates={states}
+                onSelectState={toggleState}
+              />
             )}
           </SectionCard>
 
@@ -390,7 +398,11 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
             ) : freightByState.length === 0 ? (
               <EmptyState />
             ) : (
-              <FreightChart data={freightByState} />
+              <FreightChart
+                data={freightByState}
+                selectedStates={states}
+                onSelectState={toggleState}
+              />
             )}
           </SectionCard>
 

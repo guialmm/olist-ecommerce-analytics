@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { CategoryRevenue } from "../lib/api";
 import { formatCurrency, humanize } from "../lib/format";
 
@@ -9,11 +9,18 @@ function CustomTooltip({ active, payload }: any) {
     <div className="card-surface px-3 py-2 text-[12px] shadow-tinted">
       <p className="font-semibold text-text">{humanize(p.category)}</p>
       <p className="text-text-muted">{formatCurrency(p.revenue)}</p>
+      <p className="mt-1 text-[11px] text-accent">clique pra filtrar</p>
     </div>
   );
 }
 
-export function TopCategoriesChart({ data }: { data: CategoryRevenue[] }) {
+interface Props {
+  data: CategoryRevenue[];
+  selectedCategories?: string[];
+  onSelectCategory?: (category: string) => void;
+}
+
+export function TopCategoriesChart({ data, selectedCategories = [], onSelectCategory }: Props) {
   const sorted = [...data].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
 
   return (
@@ -40,12 +47,26 @@ export function TopCategoriesChart({ data }: { data: CategoryRevenue[] }) {
         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
         <Bar
           dataKey="revenue"
-          fill="#f0a020"
-          fillOpacity={0.8}
           radius={[0, 0, 0, 0]}
           animationDuration={1000}
           animationEasing="ease-out"
-        />
+          cursor={onSelectCategory ? "pointer" : undefined}
+          onClick={(d: any) => onSelectCategory?.(d.category)}
+        >
+          {sorted.map((d) => (
+            <Cell
+              key={d.category}
+              fill="#f0a020"
+              fillOpacity={
+                selectedCategories.length === 0
+                  ? 0.8
+                  : selectedCategories.includes(d.category)
+                    ? 1
+                    : 0.3
+              }
+            />
+          ))}
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

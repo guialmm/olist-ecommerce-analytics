@@ -96,6 +96,18 @@ body {
     0 8px 20px -8px rgba(240, 160, 32, 0.08);
 }
 
+/* Gráficos clicáveis (cross-filter) ficam com foco programático depois
+   do clique — o contorno azul padrão do navegador não combina com o
+   tema. Some no clique do mouse, mas continua visível navegando por
+   teclado (:focus-visible), pra não regredir acessibilidade. */
+.recharts-wrapper *:focus {
+  outline: none;
+}
+.recharts-wrapper *:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
 /* Controles de zoom do Leaflet: por padrão vêm em branco/preto genérico
    da lib, destoando do tema. Realinha com a paleta do terminal. */
 .leaflet-control-zoom a {
