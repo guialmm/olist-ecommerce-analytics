@@ -40,8 +40,9 @@ de estratégia (aquisição vs. retenção) faz sentido pra esse negócio.
 
 - **MySQL 8** (Docker)
 - **Python** (pandas, SQLAlchemy, PyMySQL) para o ETL
+- **scikit-learn** — modelo de risco de avaliação negativa (treino offline, ver `ml/`)
 - **FastAPI** — API REST que serve o dashboard, protegida por login (JWT)
-- **React + TypeScript + Tailwind + Framer Motion + Recharts** — frontend animado
+- **React + TypeScript + Tailwind + Framer Motion + Recharts + Leaflet** — frontend animado
 
 ## Login
 
@@ -134,7 +135,7 @@ os testes — sem isso, nada quebra, só pula os testes que precisam do dado.
 
 ## Testes
 
-Backend (pytest — 49 testes: unitários nas funções puras de `analytics.py`,
+Backend (pytest — 57 testes: unitários nas funções puras de `analytics.py`,
 autenticação e integração da API contra o MySQL real; pula com uma mensagem
 clara se o banco não estiver de pé):
 
@@ -144,7 +145,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Frontend (Vitest + Testing Library — 60 testes: funções de formatação,
+Frontend (Vitest + Testing Library — 64 testes: funções de formatação,
 `lib/api.ts`, `lib/auth.ts`, componentes, o gate de autenticação e o fluxo
 completo do `Dashboard` com a API mockada):
 
@@ -152,6 +153,24 @@ completo do `Dashboard` com a API mockada):
 cd frontend
 npm test          # roda uma vez
 npm run test:watch  # modo watch
+```
+
+## Modelo de risco de avaliação negativa
+
+Regressão logística simples (scikit-learn) treinada em `delivery_days` +
+`on_time` prevendo a probabilidade de uma avaliação ser negativa (nota ≤ 2).
+Serviço propositalmente sem scikit-learn no runtime da API: o treino roda
+offline e salva só os coeficientes + uma curva pré-computada num JSON
+pequeno (`backend/review_risk_model.json`, versionado no repo); a API faz o
+sigmoid na mão (ver [backend/review_risk.py](backend/review_risk.py)). O
+dashboard tem um simulador interativo — [`ReviewRiskSimulator`](frontend/src/components/ReviewRiskSimulator.tsx) — com slider de dias e toggle no
+prazo/atrasado.
+
+Pra retreinar (por exemplo depois de recarregar o dataset):
+
+```bash
+pip install -r ml/requirements.txt
+python ml/train_review_risk_model.py
 ```
 
 ## Tratamento de erro
@@ -189,7 +208,6 @@ atribuição) — por isso os CSVs não ficam versionados neste repositório, ve
 
 ## Próximos passos possíveis
 
-- Modelo simples prevendo nota da avaliação a partir do tempo de entrega
 - Deploy do frontend (Vercel/Netlify) + backend (Railway/Render) + banco
   gerenciado, pra link público no portfólio
 

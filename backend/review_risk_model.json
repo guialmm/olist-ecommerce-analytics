@@ -1,0 +1,251 @@
+{
+  "intercept": -1.081823,
+  "coef_delivery_days": 0.038266,
+  "coef_on_time": -1.642691,
+  "metrics": {
+    "accuracy": 0.8915,
+    "roc_auc": 0.7043,
+    "base_rate": 0.1273,
+    "n_train": 77597,
+    "n_test": 19400,
+    "confusion_matrix": {
+      "true_negative": 16715,
+      "false_positive": 216,
+      "false_negative": 1888,
+      "true_positive": 581
+    }
+  },
+  "curve": [
+    {
+      "delivery_days": 0,
+      "on_time_risk": 0.0615,
+      "late_risk": 0.2532
+    },
+    {
+      "delivery_days": 1,
+      "on_time_risk": 0.0638,
+      "late_risk": 0.2605
+    },
+    {
+      "delivery_days": 2,
+      "on_time_risk": 0.0661,
+      "late_risk": 0.2679
+    },
+    {
+      "delivery_days": 3,
+      "on_time_risk": 0.0685,
+      "late_risk": 0.2755
+    },
+    {
+      "delivery_days": 4,
+      "on_time_risk": 0.071,
+      "late_risk": 0.2832
+    },
+    {
+      "delivery_days": 5,
+      "on_time_risk": 0.0736,
+      "late_risk": 0.291
+    },
+    {
+      "delivery_days": 6,
+      "on_time_risk": 0.0762,
+      "late_risk": 0.299
+    },
+    {
+      "delivery_days": 7,
+      "on_time_risk": 0.079,
+      "late_risk": 0.307
+    },
+    {
+      "delivery_days": 8,
+      "on_time_risk": 0.0818,
+      "late_risk": 0.3152
+    },
+    {
+      "delivery_days": 9,
+      "on_time_risk": 0.0847,
+      "late_risk": 0.3236
+    },
+    {
+      "delivery_days": 10,
+      "on_time_risk": 0.0877,
+      "late_risk": 0.332
+    },
+    {
+      "delivery_days": 11,
+      "on_time_risk": 0.0908,
+      "late_risk": 0.3405
+    },
+    {
+      "delivery_days": 12,
+      "on_time_risk": 0.094,
+      "late_risk": 0.3492
+    },
+    {
+      "delivery_days": 13,
+      "on_time_risk": 0.0973,
+      "late_risk": 0.3579
+    },
+    {
+      "delivery_days": 14,
+      "on_time_risk": 0.1008,
+      "late_risk": 0.3668
+    },
+    {
+      "delivery_days": 15,
+      "on_time_risk": 0.1043,
+      "late_risk": 0.3757
+    },
+    {
+      "delivery_days": 16,
+      "on_time_risk": 0.1079,
+      "late_risk": 0.3847
+    },
+    {
+      "delivery_days": 17,
+      "on_time_risk": 0.1117,
+      "late_risk": 0.3938
+    },
+    {
+      "delivery_days": 18,
+      "on_time_risk": 0.1155,
+      "late_risk": 0.403
+    },
+    {
+      "delivery_days": 19,
+      "on_time_risk": 0.1195,
+      "late_risk": 0.4122
+    },
+    {
+      "delivery_days": 20,
+      "on_time_risk": 0.1236,
+      "late_risk": 0.4215
+    },
+    {
+      "delivery_days": 21,
+      "on_time_risk": 0.1278,
+      "late_risk": 0.4309
+    },
+    {
+      "delivery_days": 22,
+      "on_time_risk": 0.1321,
+      "late_risk": 0.4403
+    },
+    {
+      "delivery_days": 23,
+      "on_time_risk": 0.1365,
+      "late_risk": 0.4497
+    },
+    {
+      "delivery_days": 24,
+      "on_time_risk": 0.1411,
+      "late_risk": 0.4592
+    },
+    {
+      "delivery_days": 25,
+      "on_time_risk": 0.1458,
+      "late_risk": 0.4687
+    },
+    {
+      "delivery_days": 26,
+      "on_time_risk": 0.1506,
+      "late_risk": 0.4783
+    },
+    {
+      "delivery_days": 27,
+      "on_time_risk": 0.1556,
+      "late_risk": 0.4878
+    },
+    {
+      "delivery_days": 28,
+      "on_time_risk": 0.1607,
+      "late_risk": 0.4974
+    },
+    {
+      "delivery_days": 29,
+      "on_time_risk": 0.1659,
+      "late_risk": 0.507
+    },
+    {
+      "delivery_days": 30,
+      "on_time_risk": 0.1713,
+      "late_risk": 0.5165
+    },
+    {
+      "delivery_days": 31,
+      "on_time_risk": 0.1768,
+      "late_risk": 0.5261
+    },
+    {
+      "delivery_days": 32,
+      "on_time_risk": 0.1824,
+      "late_risk": 0.5356
+    },
+    {
+      "delivery_days": 33,
+      "on_time_risk": 0.1882,
+      "late_risk": 0.5451
+    },
+    {
+      "delivery_days": 34,
+      "on_time_risk": 0.1941,
+      "late_risk": 0.5546
+    },
+    {
+      "delivery_days": 35,
+      "on_time_risk": 0.2002,
+      "late_risk": 0.564
+    },
+    {
+      "delivery_days": 36,
+      "on_time_risk": 0.2064,
+      "late_risk": 0.5734
+    },
+    {
+      "delivery_days": 37,
+      "on_time_risk": 0.2127,
+      "late_risk": 0.5827
+    },
+    {
+      "delivery_days": 38,
+      "on_time_risk": 0.2192,
+      "late_risk": 0.592
+    },
+    {
+      "delivery_days": 39,
+      "on_time_risk": 0.2258,
+      "late_risk": 0.6012
+    },
+    {
+      "delivery_days": 40,
+      "on_time_risk": 0.2326,
+      "late_risk": 0.6104
+    },
+    {
+      "delivery_days": 41,
+      "on_time_risk": 0.2395,
+      "late_risk": 0.6194
+    },
+    {
+      "delivery_days": 42,
+      "on_time_risk": 0.2465,
+      "late_risk": 0.6284
+    },
+    {
+      "delivery_days": 43,
+      "on_time_risk": 0.2537,
+      "late_risk": 0.6373
+    },
+    {
+      "delivery_days": 44,
+      "on_time_risk": 0.261,
+      "late_risk": 0.6461
+    },
+    {
+      "delivery_days": 45,
+      "on_time_risk": 0.2684,
+      "late_risk": 0.6548
+    }
+  ],
+  "trained_at": "2026-09-20T15:28:50.209437+00:00"
+}

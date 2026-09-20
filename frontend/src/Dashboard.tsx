@@ -12,6 +12,7 @@ import { Nav } from "./components/Nav";
 import { OrderStatusChart } from "./components/OrderStatusChart";
 import { PaymentMethodsChart } from "./components/PaymentMethodsChart";
 import { RevenueTimeseriesChart } from "./components/RevenueTimeseriesChart";
+import { ReviewRiskSimulator } from "./components/ReviewRiskSimulator";
 import { SectionCard } from "./components/SectionCard";
 import { ChartSkeleton, KpiCardSkeleton } from "./components/Skeleton";
 import { StateRevenueChart } from "./components/StateRevenueChart";
@@ -29,6 +30,7 @@ import {
   type OrderStatusPoint,
   type PaymentMethod,
   type RevenuePoint,
+  type ReviewRiskModel,
   type StateRevenue,
   type TopSeller,
 } from "./lib/api";
@@ -60,6 +62,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
   const [freightByState, setFreightByState] = useState<FreightByState[]>([]);
   const [topSellers, setTopSellers] = useState<TopSeller[]>([]);
   const [geoDensity, setGeoDensity] = useState<GeoPoint[]>([]);
+  const [reviewRisk, setReviewRisk] = useState<ReviewRiskModel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [retryTick, setRetryTick] = useState(0);
@@ -96,8 +99,9 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
       api.freightByState(f),
       api.topSellers(f),
       api.geoDensity(f),
+      api.reviewRiskModel(),
     ])
-      .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts, geo]) => {
+      .then(([k, rev, os, dvr, tc, rbs, pm, fbs, ts, geo, risk]) => {
         setKpis(k);
         setRevenue(rev);
         setOrderStatus(os);
@@ -108,6 +112,7 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
         setFreightByState(fbs);
         setTopSellers(ts);
         setGeoDensity(geo);
+        setReviewRisk(risk);
         setError(null);
         setInitialLoading(false);
       })
@@ -363,6 +368,21 @@ export default function Dashboard({ onLogout, onSessionExpired }: Props) {
               <EmptyState height={300} />
             ) : (
               <TopSellersChart data={topSellers} />
+            )}
+          </SectionCard>
+        </div>
+
+        <div className="mt-6">
+          <SectionCard
+            title="Risco de avaliação negativa"
+            subtitle="simulação com o modelo (regressão logística)"
+          >
+            {initialLoading ? (
+              <ChartSkeleton height={340} />
+            ) : !reviewRisk ? (
+              <EmptyState height={340} />
+            ) : (
+              <ReviewRiskSimulator data={reviewRisk} />
             )}
           </SectionCard>
         </div>

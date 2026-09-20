@@ -49,6 +49,21 @@ const { filterOptions, mockApi } = vi.hoisted(() => {
         .mockResolvedValue([
           { lat: -23.55, lng: -46.63, city: "sao paulo", state: "SP", revenue: 100, orders: 3 },
         ]),
+      reviewRiskModel: vi.fn().mockResolvedValue({
+        metrics: {
+          accuracy: 0.89,
+          roc_auc: 0.7,
+          base_rate: 0.13,
+          n_train: 100,
+          n_test: 20,
+          confusion_matrix: { true_negative: 15, false_positive: 1, false_negative: 3, true_positive: 1 },
+        },
+        curve: [
+          { delivery_days: 0, on_time_risk: 0.06, late_risk: 0.25 },
+          { delivery_days: 10, on_time_risk: 0.09, late_risk: 0.32 },
+        ],
+        trained_at: "2026-01-01T00:00:00Z",
+      }),
     },
   };
 });

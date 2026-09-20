@@ -81,6 +81,30 @@ export interface GeoPoint {
   orders: number;
 }
 
+export interface ReviewRiskCurvePoint {
+  delivery_days: number;
+  on_time_risk: number;
+  late_risk: number;
+}
+
+export interface ReviewRiskModel {
+  metrics: {
+    accuracy: number;
+    roc_auc: number;
+    base_rate: number;
+    n_train: number;
+    n_test: number;
+    confusion_matrix: {
+      true_negative: number;
+      false_positive: number;
+      false_negative: number;
+      true_positive: number;
+    };
+  };
+  curve: ReviewRiskCurvePoint[];
+  trained_at: string;
+}
+
 export interface Filters {
   states: string[];
   categories: string[];
@@ -147,4 +171,5 @@ export const api = {
     getJSON<FreightByState[]>(`/api/freight-by-state${buildQuery(f)}`),
   topSellers: (f: Filters) => getJSON<TopSeller[]>(`/api/top-sellers${buildQuery(f)}`),
   geoDensity: (f: Filters) => getJSON<GeoPoint[]>(`/api/geo-density${buildQuery(f)}`),
+  reviewRiskModel: () => getJSON<ReviewRiskModel>("/api/review-risk-model"),
 };

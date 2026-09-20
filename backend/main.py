@@ -9,6 +9,7 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 import analytics
 import auth
+import review_risk
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("olist_api")
@@ -62,6 +63,12 @@ async def db_unavailable_handler(request: Request, exc: OperationalError):
 async def db_error_handler(request: Request, exc: SQLAlchemyError):
     logger.error("Erro de banco em %s: %s", request.url.path, exc)
     return JSONResponse(status_code=500, content={"detail": "Erro ao consultar o banco de dados."})
+
+
+@app.exception_handler(review_risk.ModelNotAvailable)
+async def model_unavailable_handler(request: Request, exc: review_risk.ModelNotAvailable):
+    logger.error("Modelo de risco indisponível em %s: %s", request.url.path, exc)
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.exception_handler(Exception)
@@ -154,6 +161,11 @@ def top_sellers(f: Filters = Depends()):
 @router.get("/api/geo-density")
 def geo_density(f: Filters = Depends()):
     return analytics.get_geo_density(f.states, f.categories, f.start_date, f.end_date)
+
+
+@router.get("/api/review-risk-model")
+def review_risk_model():
+    return review_risk.get_model_info()
 
 
 app.include_router(router)
