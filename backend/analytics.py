@@ -1,10 +1,31 @@
 import datetime
+import functools
 
 import numpy as np
 import pandas as pd
 from sqlalchemy import bindparam, text
 
 from db import engine
+
+# O dataset (2016-2018) é histórico e só muda quando alguém roda o ETL de
+# novo manualmente — não tem por que recalcular a mesma combinação de
+# filtros repetidas vezes. Cache em memória do processo (some ao reiniciar
+# o serviço), sem TTL, já que os dados não mudam em runtime.
+_cache: dict = {}
+
+
+def cached(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        def norm(v):
+            return tuple(v) if isinstance(v, list) else v
+
+        key = (fn.__name__, tuple(norm(a) for a in args), tuple(sorted((k, norm(v)) for k, v in kwargs.items())))
+        if key not in _cache:
+            _cache[key] = fn(*args, **kwargs)
+        return _cache[key]
+
+    return wrapper
 
 
 def _native(v):
@@ -70,6 +91,7 @@ BASE_ORDER_ITEMS_JOIN = f"""
 """
 
 
+@cached
 def get_filter_options() -> dict:
     states = run("SELECT DISTINCT state FROM customers ORDER BY state")["state"].tolist()
     categories = run(
@@ -159,6 +181,7 @@ def _monthly_trend(
     }
 
 
+@cached
 def get_kpis(
     states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
 ) -> dict:
@@ -203,6 +226,7 @@ def get_kpis(
     }
 
 
+@cached
 def get_revenue_timeseries(
     states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
 ) -> list[dict]:
@@ -221,6 +245,7 @@ def get_revenue_timeseries(
     return to_records(df)
 
 
+@cached
 def get_order_status(
     states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
 ) -> list[dict]:
@@ -256,6 +281,7 @@ def get_order_status(
     return to_records(df)
 
 
+@cached
 def get_delivery_vs_review(
     states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
 ) -> dict:
@@ -309,6 +335,7 @@ def get_delivery_vs_review(
     }
 
 
+@cached
 def get_top_categories(
     states: list[str],
     categories: list[str],
@@ -334,6 +361,7 @@ def get_top_categories(
     return to_records(df)
 
 
+@cached
 def get_revenue_by_state(
     states: list[str],
     categories: list[str],
@@ -356,6 +384,7 @@ def get_revenue_by_state(
     return to_records(df)
 
 
+@cached
 def get_payment_methods(
     states: list[str], categories: list[str], start_date: str | None = None, end_date: str | None = None
 ) -> list[dict]:
@@ -396,6 +425,7 @@ def get_payment_methods(
     return to_records(df)
 
 
+@cached
 def get_freight_by_state(
     states: list[str],
     categories: list[str],
@@ -421,6 +451,7 @@ def get_freight_by_state(
     return to_records(df)
 
 
+@cached
 def get_geo_density(
     states: list[str],
     categories: list[str],
@@ -448,6 +479,7 @@ def get_geo_density(
     return to_records(df)
 
 
+@cached
 def get_top_sellers(
     states: list[str],
     categories: list[str],
