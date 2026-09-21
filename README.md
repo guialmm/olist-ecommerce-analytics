@@ -2,14 +2,17 @@
 
 [![CI](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/guialmm/olist-ecommerce-analytics/actions/workflows/ci.yml)
 
-**[Demo ao vivo](#deploy)** — login: `demo` / `olist2018` (backend grátis pode
-levar ~30s pra acordar na primeira visita, ver [Deploy](#deploy))
+**[Demo ao vivo](https://olist-ecommerce-analytics-nine.vercel.app)** — login:
+`demo` / `olist2018` (backend grátis pode levar ~30s pra acordar na primeira
+visita, ver [Deploy](#deploy))
 
-Projeto de portfólio/estudo: dados **reais** e anonimizados de e-commerce
-brasileiro (o [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
-~100 mil pedidos entre 2016 e 2018), carregados num banco relacional próprio
-(MySQL) e servidos por uma API (FastAPI) para um dashboard animado
-(React + TypeScript + Tailwind + Framer Motion + Recharts).
+Dashboard de analytics sobre dados **reais** de e-commerce brasileiro (o
+[Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce),
+~100 mil pedidos entre 2016 e 2018): banco relacional próprio (MySQL), API
+(FastAPI) e um dashboard interativo (React + TypeScript + Tailwind + Framer
+Motion + Recharts) com filtros sincronizados por URL, cross-filtering entre
+gráficos, exportação em CSV e um modelo de ML simulando risco de avaliação
+negativa.
 
 ## Contexto
 
@@ -118,7 +121,7 @@ npm run dev
 
 ## Deploy
 
-Demo pública: **[link aqui depois de publicado]**
+Demo pública: **[olist-ecommerce-analytics-nine.vercel.app](https://olist-ecommerce-analytics-nine.vercel.app)**
 
 Três serviços, todos com camada gratuita permanente:
 
@@ -189,7 +192,7 @@ os testes — sem isso, nada quebra, só pula os testes que precisam do dado.
 
 ## Testes
 
-Backend (pytest — 57 testes: unitários nas funções puras de `analytics.py`,
+Backend (pytest — 59 testes: unitários nas funções puras de `analytics.py`,
 autenticação e integração da API contra o MySQL real; pula com uma mensagem
 clara se o banco não estiver de pé):
 
@@ -259,11 +262,6 @@ para entrevistas (casing):
 O dataset é da Olist, licenciado **CC BY-NC-SA 4.0** (uso não comercial, com
 atribuição) — por isso os CSVs não ficam versionados neste repositório, veja
 [data/README.md](data/README.md) para baixar.
-
-## Próximos passos possíveis
-
-- Deploy do frontend (Vercel/Netlify) + backend (Railway/Render) + banco
-  gerenciado, pra link público no portfólio
 
 ## Licença
 

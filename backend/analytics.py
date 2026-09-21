@@ -165,13 +165,13 @@ def get_kpis(
     where, params = _filter_clauses(states, categories, "c.state", CATEGORY_EXPR, start_date, end_date)
     df = run(
         f"""
-        SELECT o.order_id, oi.price
+        SELECT SUM(oi.price) AS revenue, COUNT(DISTINCT o.order_id) AS orders
         {BASE_ORDER_ITEMS_JOIN} {where}
         """,
         **params,
     )
-    revenue = float(df["price"].sum())
-    orders = df["order_id"].nunique()
+    revenue = float(df["revenue"].iloc[0] or 0)
+    orders = int(df["orders"].iloc[0] or 0)
     aov = revenue / orders if orders else 0.0
 
     delivery_clauses, delivery_params = [], {}
